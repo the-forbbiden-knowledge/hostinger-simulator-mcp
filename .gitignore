@@ -1,0 +1,34 @@
+# Build artifacts
+out/
+.build/
+build/
+CMakeFiles/
+CMakeCache.txt
+Testing/
+*.obj
+*.o
+*.pdb
+*.ilk
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Mix and Phoenix local build artifacts
+elixir/_build/
+elixir/deps/
+elixir/erl_crash.dump
+.elixir_ls/
+
+# Local files and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+*.key
+*.log
+library/
+private/
+.vscode/
+.idea/

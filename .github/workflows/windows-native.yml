@@ -1,0 +1,15 @@
+name: Windows native build
+on:
+  push:
+  pull_request:
+jobs:
+  build-test:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake --preset windows-msvc
+      - name: Build
+        run: cmake --build --preset windows-msvc --config Release
+      - name: Test
+        run: ctest --preset windows-msvc -C Release --output-on-failure

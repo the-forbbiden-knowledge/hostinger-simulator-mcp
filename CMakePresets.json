@@ -1,0 +1,19 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": {"major": 3, "minor": 24, "patch": 0},
+  "configurePresets": [
+    {"name": "windows-msvc", "displayName": "Windows x64 / Visual Studio 2022", "generator": "Visual Studio 17 2022", "architecture": "x64", "binaryDir": "${sourceDir}/out/build/${presetName}"},
+    {"name": "windows-ninja", "displayName": "Windows / Ninja", "generator": "Ninja", "binaryDir": "${sourceDir}/out/build/${presetName}", "cacheVariables": {"CMAKE_BUILD_TYPE": "Release"}},
+    {"name": "portable", "displayName": "Portable CMake", "generator": "Unix Makefiles", "binaryDir": "${sourceDir}/out/build/${presetName}", "cacheVariables": {"CMAKE_BUILD_TYPE": "Debug"}}
+  ],
+  "buildPresets": [
+    {"name": "windows-msvc", "configurePreset": "windows-msvc"},
+    {"name": "windows-ninja", "configurePreset": "windows-ninja"},
+    {"name": "portable", "configurePreset": "portable"}
+  ],
+  "testPresets": [
+    {"name": "windows-msvc", "configurePreset": "windows-msvc", "output": {"outputOnFailure": true}},
+    {"name": "windows-ninja", "configurePreset": "windows-ninja", "output": {"outputOnFailure": true}},
+    {"name": "portable", "configurePreset": "portable", "output": {"outputOnFailure": true}}
+  ]
+}
