@@ -865,6 +865,20 @@ The fixture lifecycle is: **mission and authorized scope → evidence / hypothes
 **Release gates:** 24/24 synthetic failure fixtures must deny at the intended gate; unauthorized and unknown selectors receive opaque responses; approved decisions are read-only and carry `network_access:false` and `side_effects:false`; unverified financial impact remains JSON `null`; 107 CTest targets pass both locally and in Windows CI for the exact published commit. Pending: live AI evaluations, real authentication, multi-party policy and responsible-AI review, consistent trace correlation, incident handling, and measurable operational impact.
 
 
+## Operational evidence preflight (human-governed)
+
+The offline evidence validator `tools/operational_evidence_gate.py` provides a **structural checklist** for an authorized release review. A private manifest must identify a Git commit, declare an authorized environment, contain exactly four distinct reviewer-role records, cover operational gates G0–G7, and include actual evidence files whose SHA-256 digests match their declared values. It also requires explicit RTO/RPO targets and measured numbers, rejecting missing data and measured values outside those declared targets.
+
+The tool checks evidence in a **separate, caller-specified local directory**, with bounded file reads, symlink/traversal rejection and no raw evidence in its output. Eighteen cross-platform fixture tests check positive structure and fail-closed cases. The CI runs these fixture tests only; the operational evidence from a real service is **never** added to this public repository.
+
+A structurally valid package returns `READY_FOR_EXTERNAL_REVIEW`, **not deployment approval**. Reviewer identity, true independence, signature authenticity, service operation, correctness of evidence, and actual authorization cannot be established by this checker. Its `production_decision` is always `NO_GO_UNTIL_INDEPENDENT_AUTHORIZATION` or `NO_GO`. A human reviewer must validate real evidence outside the public repository.
+
+Example for an authorized private evidence directory:
+
+~~~powershell
+python tools/operational_evidence_gate.py --manifest PATH_TO_PRIVATE_MANIFEST --evidence-root PATH_TO_PRIVATE_EVIDENCE
+~~~
+
 ## Pre-commit and pre-push Git-object safeguards
 
 The optional local Git hooks in `.githooks/` check **Git object contents** before ordinary command-line commits and pushes. The pre-commit gate reads the exact staged blob IDs from the index; it does not trust the current working tree. The pre-push gate reads Git's ref updates and examines **every commit to be sent**, including intermediate commits whose private files were later deleted. Newly created branches are checked across their full reachable history. If a required Git object cannot be read, the gate fails closed.

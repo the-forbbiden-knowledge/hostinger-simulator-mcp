@@ -19,6 +19,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/git_publication_gate.py --staged --root .
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Validate structural release evidence gate (synthetic)
+        run: |
+          python -m unittest discover -s tests -p "test_operational_evidence_gate.py" -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Configure
         run: cmake --preset windows-msvc
       - name: Build
