@@ -7,6 +7,10 @@ namespace simulator {
 namespace {
 bool valid_resource(std::string_view resource) {
   if (resource.empty() || resource.size() > 256) return false;
+  // These are fixture identifiers, not paths. Reject ambiguous dot segments
+  // before they can cross a future adapter's trust boundary.
+  if (resource.front() == '.' || resource.back() == '.' ||
+      resource.find("..") != std::string_view::npos) return false;
   return std::all_of(resource.begin(), resource.end(), [](unsigned char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
            (c >= '0' && c <= '9') || c == '_' || c == '.' ||

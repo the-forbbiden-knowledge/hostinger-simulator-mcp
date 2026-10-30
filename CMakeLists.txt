@@ -185,3 +185,8 @@ add_test(NAME native_cli_contract COMMAND
   "-DSIMULATOR_EXE=$<TARGET_FILE:simulator>"
   -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/cli_contract.cmake")
 set_tests_properties(native_resilience_invariants native_cli_contract PROPERTIES TIMEOUT 20)
+# Explicit identifier grammar / all-byte / deterministic negative regression.
+add_executable(resource_boundary_tests tests/resource_boundary_tests.cpp)
+target_link_libraries(resource_boundary_tests PRIVATE simulator_core)
+add_test(NAME native_resource_boundary COMMAND resource_boundary_tests)
+set_tests_properties(native_resource_boundary PROPERTIES TIMEOUT 20)
