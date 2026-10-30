@@ -1,5 +1,6 @@
 #include "simulator/simulator.hpp"
 #include "simulator/agent_security.hpp"
+#include "simulator/recon_security.hpp"
 #include <iostream>
 #include <string_view>
 
@@ -36,6 +37,16 @@ int main(int argc, char** argv) {
     std::cout << result << '\n';
     return result.find("invalid_policy_input") == std::string::npos ? 0 : 2;
   }
-  std::cerr << "Usage: simulator list | simulator call <tool_name> <resource_id> | simulator security list | simulator security evaluate <source> <action> <role> <session_scope> [none|approved] | simulator security call <source> <role> <scope> <approval> <tool> <resource>\n";
+  if (argc == 3 && std::string_view(argv[1]) == "recon" &&
+      std::string_view(argv[2]) == "list") {
+    std::cout << simulator::recon_security::list_scenarios() << '\n';
+    return 0;
+  }
+  if (argc == 5 && std::string_view(argv[1]) == "recon" &&
+      std::string_view(argv[2]) == "inspect") {
+    std::cout << simulator::recon_security::inspect(argv[3], argv[4]) << '\n';
+    return 0; // denial is an expected synthetic policy outcome
+  }
+  std::cerr << "Usage: simulator recon list | simulator recon inspect <scenario_id> <viewer|operator|reviewer> | simulator list | simulator call <tool_name> <resource_id> | simulator security list | simulator security evaluate <source> <action> <role> <session_scope> [none|approved] | simulator security call <source> <role> <scope> <approval> <tool> <resource>\n";
   return 64;
 }

@@ -16,6 +16,7 @@ All operations are local mock previews. **No cloud accounts, DNS zones, virtual 
 - **UI (planned):** Phoenix + LiveView, not generated or installed in this bootstrap.
 - **Protocol (planned):** Model Context Protocol over JSON-RPC 2.0 with tool discovery and validated tool invocations. The current CLI is *not* MCP wire-compatible.
 - **Agent security bootstrap:** 14 synthetic threat-model cases; an executable fail-closed decision engine and guarded native preview call, with source trust, action scope, role, session boundary and explicit approval checks. There is no LLM, browser, database, credential store or network interception in this bootstrap.
+- **Exposure assessment (synthetic):** 20 offline reconnaissance surfaces across model, retrieval, MCP tool discovery, gateway, orchestration and monitoring; role-gated reports with uniform denials and no network probes.
 - **Testing:** CTest + ExUnit; dependency scanning, fuzzing, static analysis, reproducibility tests and observability are delivery gates.
 
 ## Repository layout
@@ -26,7 +27,7 @@ project/
   CMakePresets.json           Windows configuration presets
   include/simulator/          Native public interfaces
   src/native/                 Native simulator, policy engine and CLI
-  tests/                      Native and agent-policy deterministic tests
+  tests/                      Native, agent-policy and exposure tests
   elixir/                     Minimal Mix application with Port wrapper
   .github/workflows/          Windows build/test CI
 ```
@@ -45,6 +46,9 @@ ctest --preset windows-msvc -C Release --output-on-failure
 .\out\build\windows-msvc\Release\simulator.exe call websites.list demo
 .\out\build\windows-msvc\Release\simulator.exe call monitoring.health demo
 .\out\build\windows-msvc\Release\simulator.exe security list
+.\out\build\windows-msvc\Release\simulator.exe recon list
+.\out\build\windows-msvc\Release\simulator.exe recon inspect rag_source_attribution viewer
+.\out\build\windows-msvc\Release\simulator.exe recon inspect rag_source_attribution reviewer
 .\out\build\windows-msvc\Release\simulator.exe security call web_page operator same_session approved vps.list demo
 .\out\build\windows-msvc\Release\simulator.exe security call trusted_application operator same_session approved vps.list demo
 ```
@@ -89,36 +93,44 @@ Architecture, service scenarios, the engineering technique matrix and delivery g
 
 ## Architecture — Windows / native process integration
 
-### Trust boundaries
+### Complete layered architecture and trust boundaries
 
-```text
-                     Untrusted agent context
-         User messages | documents | web pages | source code
-           tool responses | shared KB | session memory
-                              |
-                    [data-only context]
-                              v
-MCP client (planned) --> JSON-RPC / tool schemas (planned)
-                              |
-                     authorization gate
-              (trusted code, independent of LLM)
-                   /                     \
-          DENY + evidence          approved mock operation
-                                            |
-                                Phoenix / API (planned)
-                                            |
-                               Elixir/OTP (adapter present)
-                                            |
-                                Erlang Port (bounded worker)
-                                            |
-                         C++20 security policy + native simulator
-                                            |
-                          Immutable synthetic fixtures / no egress
+The following is the **target architecture**, not an assertion that every service exists yet. Solid flow lines represent designed data paths. The compiled baseline is the local C++ simulator, native authorization gate and offline security-case inventory; all network ingress, real retrieval, inference, durable memory and interactive UI components remain planned.
+
+```mermaid
+flowchart TD
+    U[Human user / MCP client — planned] --> EDGE[Windows API ingress — planned]
+    EDGE --> GW[Gateway: authentication, rate limiting, safe errors — planned]
+    GW --> RPC[JSON-RPC 2.0 and MCP contract validator — planned]
+    RPC --> AUTH[Server-derived principal, tenant, session and consent — planned]
+    AUTH --> ORCH[Phoenix API / LiveView — planned]
+    ORCH --> OTP[Elixir / OTP orchestration — Port adapter source present]
+    OTP --> AGENT[Agent loop / LLM orchestration — planned]
+    AGENT --> MODEL[Inference service / model — planned]
+    AGENT --> RET[RAG ingestion / retrieval — planned]
+    RET --> VDB[Embeddings / vector index — planned]
+    RET --> DOC[Document ACL, provenance and source redaction — planned]
+    AGENT --> MEM[Session and tenant-scoped memory — planned]
+    AGENT --> CAP[Per-principal tool discovery and schema minimization — planned]
+    CAP --> POLICY[Trusted action authorization — C++ local baseline]
+    AUTH --> POLICY
+    POLICY -->|Denied| DENY[Uniform denial / no data disclosure — C++ baseline]
+    POLICY -->|Allowed preview| PORT[Erlang Port / bounded worker — adapter source present]
+    PORT --> NATIVE[C++20 / CMake deterministic simulator — implemented]
+    NATIVE --> FIX[Immutable synthetic fixtures / no external effects — baseline]
+    NATIVE --> CASES[Offline exposure inventory / role gate — implemented]
+    CASES --> OBS[Structured events, correlation, canaries — planned]
+    GW --> OBS
+    POLICY --> OBS
+    DOC -. untrusted text never grants authority .-> POLICY
+    MEM -. memory never grants authority .-> POLICY
+    MODEL -. model output never grants authority .-> POLICY
+    EXT[External providers / A2A / host systems — not connected] -. no network connection .-> FIX
 ```
 
-The native CLI and deterministic security policy are implemented and tested on Linux; GitHub Actions will validate the Windows toolchain. The command `simulator security call` passes through the native policy before dispatching to the mock tool registry. `simulator call` remains a local **developer-only preview diagnostic**, not an authorized network boundary. The application must never expose that diagnostic as an MCP tool or over HTTP. The Elixir Port source adapter has not yet been integrated with the guarded command or verified end-to-end on Windows. Phoenix, authentication, authorization context construction and MCP transport are not implemented.
+**Trust zones:** the public ingress is untrusted; agent prompts, retrieved documents, web pages, model output, tool results and memory are **data-only**; authority comes from independently authenticated application context. Private tool schemas, backend versions, document names, embedding configuration and debug details require separate exposure controls. Rendered health and error responses must disclose no infrastructure topology. The native C++ CLI is a developer diagnostic, not an MCP or HTTP authorization endpoint.
 
-**Trust invariant:** messages and tool results are data, not instructions or authorization. Even a benign-looking response from an approved server does not grant tool execution. Application-owned authentication and authorization state must be generated separately from model text.
+**Implementation boundary:** `simulator security call` enforces the local native permission preview. `simulator recon inspect` separately exercises synthetic information-disclosure decisions. Neither command accepts real credentials, sends requests or operates on live tenants. The current Elixir adapter does not yet enforce these gates end to end. A future network service MUST bind source, identity, role and approval server-side, not allow clients or models to select them.
 
 ### Boundaries and safety
 
@@ -148,6 +160,9 @@ These commands are deterministic **risk-control simulations**, not attack execut
 ```powershell
 # Inventory modeled entry points, abuse cases and required defenses
 .\out\build\windows-msvc\Release\simulator.exe security list
+.\out\build\windows-msvc\Release\simulator.exe recon list
+.\out\build\windows-msvc\Release\simulator.exe recon inspect rag_source_attribution viewer
+.\out\build\windows-msvc\Release\simulator.exe recon inspect rag_source_attribution reviewer
 
 # Untrusted page content cannot authorize a tool call: decision = deny
 .\out\build\windows-msvc\Release\simulator.exe security call web_page operator same_session approved vps.list demo
@@ -202,10 +217,42 @@ Use a bounded, isolated **inventory -> synthetic probe -> policy decision -> exp
 - Secret disclosure and network egress are disabled even for privileged local role fixtures.
 - Shared-memory writes need trusted application context, reviewer role and explicit approval, and still remain preview-only.
 - Authorized calls remain constrained by the native tool allowlist, resource validation and `side_effects:false`.
-- Compile and run the seven CTest targets in supported builds. Windows execution must be confirmed by CI; Erlang Port/Elixir end-to-end evaluation remains pending.
+- Compile and run the eleven CTest targets in supported builds. Windows execution must be confirmed by CI; Erlang Port/Elixir end-to-end evaluation remains pending.
 
 **Scope limits:** No prompt-injection classifier, multi-agent orchestrator, real OAuth/RBAC implementation, real session storage, HTML parser, Unicode normalization engine, MCP wire adapter, Phoenix app, or production telemetry is included yet. The cases above define the requirements and the testable native authorization baseline, not a finished platform.
 
+
+## AI exposure reconnaissance — offline assessment model
+
+The inventory below models externally observable properties and leakage risks across the AI application stack. It is **not a scanner**, agent fingerprinting engine, RAG service, log collector or vulnerability claim. All entries are immutable synthetic records with no outbound requests, real credentials, collected model data or secret endpoints.
+
+| Surface | Synthetic risk focus | Target control | Current status |
+|---|---|---|---|
+| UI and static assets | Client-side feature flags, internal API addresses and debug flags | Public asset review and restricted configuration | Offline fixture |
+| Gateway and health | Backend version headers, verbose health/error metadata, endpoint existence and rate behavior | Minimal responses, consistent auth, throttling | Offline fixture |
+| Orchestration and inference | Framework, provider, model and capability fingerprinting | Redacted errors, metadata minimization, query budgets | Offline fixture |
+| Tool registry (MCP) | Overbroad `tools/list` visibility, schemas and permissions | Identity-scoped discovery, per-call authorization | Offline fixture |
+| Agent federation | Capability and trust relationship disclosure | Authenticated delegation and scoped metadata | Offline fixture |
+| Retrieval (RAG) | Document attribution leakage, chunk/embedding inference, source provenance | Tenant ACL, source-filtered citations, integrity reviews | Offline fixture |
+| Detection and evidence | Keyword-only rules, cross-session correlation gaps, canaries | Behavioral analytics, trace correlation, canary integrity alerts | Offline fixture |
+
+### Safe CLI demonstration
+
+```powershell
+# 20 mapped surfaces: all static synthetic descriptions
+.\out\build\windows-msvc\Release\simulator.exe recon list
+
+# Same opaque denial for unknown and restricted fixtures at viewer level
+.\out\build\windows-msvc\Release\simulator.exe recon inspect rag_source_attribution viewer
+.\out\build\windows-msvc\Release\simulator.exe recon inspect unlisted_fixture viewer
+
+# Reviewer receives a synthetic risk/control summary, never actual data
+.\out\build\windows-msvc\Release\simulator.exe recon inspect rag_source_attribution reviewer
+```
+
+The `role` argument is a developer-controlled test input **only**. A real API cannot permit the caller to self-assert reviewer identity. The same denial response for unknown and protected fixture IDs prevents an existence oracle; inventory descriptions deliberately contain no real service identifiers. Actual logs, honeypots, adaptive detection, rate limiting, model behavior tests and active network discovery are **future work**.
+
+**Evaluation gates:** identical deny response for unknown and unauthorized IDs; no network egress; deterministic output; reviewer-only detailed synthetic summaries; tool discovery and retrieval metadata do not grant actions; telemetry correlation and source redaction must be integrated and tested before any live deployment. Do not use keyword-based monitoring as the only mechanism for preventing unauthorized access.
 
 ## Simulator service and collaboration scope
 
@@ -249,6 +296,7 @@ Proposed synthetic scenarios include `scheduled_maintenance`, `urgent_ticket`, `
 | Delivery | requirements, risk review, acceptance gates, tracked metrics | release checklist | planned |
 | Data hygiene | redaction, retention controls, immutable synthetic fixtures | static checks | guideline |
 | Simulation | deterministic fixtures, no external effects, explicit mock markers | side-effect assertions | implemented baseline |
+| AI exposure mapping | gateway, tool schemas, RAG sources, inference metadata and logging surfaces | role-gated synthetic recon inventory; 11 CTest targets | 20 offline fixtures implemented; live integrations planned |
 
 ### Metrics
 
@@ -258,6 +306,7 @@ Proposed synthetic scenarios include `scheduled_maintenance`, `urgent_ticket`, `
 - Median and p95 latency of isolated native calls.
 - OTP worker recovery time after induced failure.
 - Windows build/test success rate and dependency vulnerabilities.
+- Information-disclosure negative-test coverage, uniform-denial pass rate, synthetic exposure fixture completeness, and unauthorized tool-schema leakage (target: zero).
 - Availability simulation error against synthetic target SLO.
 
 All performance and reliability claims must come from measured executions, not assumptions.
@@ -265,8 +314,8 @@ All performance and reliability claims must come from measured executions, not a
 
 ## Delivery criteria and release gates
 
-1. Windows x64 Visual Studio 2022/CMake configure, build, CTest green (7 targets including native policy).
-2. Inputs/outputs match documented deterministic fixtures across 100 consecutive runs.
+1. Windows x64 Visual Studio 2022/CMake configure, build, CTest green (11 targets including native policy and synthetic exposure controls).
+2. Inputs/outputs (including offline reconnaissance fixture inventory) match documented deterministic fixtures across 100 consecutive runs.
 3. Native unknown-tool, malformed-input, oversized-input, untrusted tool-origin, unauthorized write/egress and cross-session policy tests fail closed.
 4. No network effects, secrets or customer information in committed artifacts.
 5. Elixir Port adapter tested end-to-end on Windows and worker timeout/crash isolation verified.
