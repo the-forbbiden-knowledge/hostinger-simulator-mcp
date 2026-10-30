@@ -5,6 +5,7 @@
 #include "simulator/supplychain_security.hpp"
 #include "simulator/vector_security.hpp"
 #include "simulator/a2a_security.hpp"
+#include "simulator/threat_model.hpp"
 #include <iostream>
 #include <string_view>
 
@@ -132,6 +133,23 @@ int main(int argc, char** argv) {
   if (argc == 8 && std::string_view(argv[1]) == "a2a" && std::string_view(argv[2]) == "delegate") {
     std::cout << simulator::a2a_security::delegate(argv[3], argv[4], argv[5], argv[6], argv[7]) << '\n'; return 0;
   }
-  std::cerr << "Usage: simulator a2a list | simulator a2a report | simulator a2a baseline <reviewer> | simulator a2a assess <scenario_id> <reviewer> | simulator a2a simulate <scenario_id> <reviewer> | simulator a2a delegate <role> <tenant_scope> <session_scope> <capability> <approval> | simulator vector list | simulator vector report | simulator vector baseline <reviewer> | simulator vector assess <scenario_id> <reviewer> | simulator vector simulate <scenario_id> <reviewer> | simulator vector query <role> <tenant_scope> <classification> <purpose> <result_kind> | simulator supplychain list | simulator supplychain report | simulator supplychain baseline <reviewer> | simulator supplychain assess <scenario_id> <reviewer> | simulator supplychain simulate <scenario_id> <reviewer> | simulator capstone list | simulator capstone report | simulator capstone assess <scenario_id> <reviewer> | simulator capstone simulate <scenario_id> <source> <role> <scope> <approval> | simulator recon list | simulator recon inspect <scenario_id> <viewer|operator|reviewer> | simulator list | simulator call <tool_name> <resource_id> | simulator security list | simulator security evaluate <source> <action> <role> <session_scope> [none|approved] | simulator security call <source> <role> <scope> <approval> <tool> <resource>\n";
+  if(argc==3 && std::string_view(argv[1])=="threat") {
+    if(std::string_view(argv[2])=="list") {std::cout<<simulator::threat_model::list_scenarios()<<'\n';return 0;}
+    if(std::string_view(argv[2])=="report") {std::cout<<simulator::threat_model::report()<<'\n';return 0;}
+    if(std::string_view(argv[2])=="assumptions") {std::cout<<simulator::threat_model::assumptions()<<'\n';return 0;}
+    if(std::string_view(argv[2])=="zones") {std::cout<<simulator::threat_model::zones()<<'\n';return 0;}
+  }
+  if(argc==4 && std::string_view(argv[1])=="threat") {
+    if(std::string_view(argv[2])=="baseline") {std::cout<<simulator::threat_model::baseline(argv[3])<<'\n';return 0;}
+    if(std::string_view(argv[2])=="brief") {std::cout<<simulator::threat_model::brief(argv[3])<<'\n';return 0;}
+  }
+  if(argc==5 && std::string_view(argv[1])=="threat") {
+    if(std::string_view(argv[2])=="assess") {std::cout<<simulator::threat_model::assess(argv[3],argv[4])<<'\n';return 0;}
+    if(std::string_view(argv[2])=="simulate") {std::cout<<simulator::threat_model::simulate(argv[3],argv[4])<<'\n';return 0;}
+  }
+  if(argc==8 && std::string_view(argv[1])=="threat" && std::string_view(argv[2])=="plan") {
+    std::cout<<simulator::threat_model::plan(argv[3],argv[4],argv[5],argv[6],argv[7])<<'\n';return 0;
+  }
+  std::cerr << "Usage: simulator threat list | simulator threat assumptions | simulator threat zones | simulator threat report | simulator threat brief <reviewer> | simulator threat baseline <reviewer> | simulator threat assess <scenario_id> <reviewer> | simulator threat simulate <scenario_id> <reviewer> | simulator threat plan <role> <scope> <validated> <approved_window> <approved> | simulator a2a list | simulator a2a report | simulator a2a baseline <reviewer> | simulator a2a assess <scenario_id> <reviewer> | simulator a2a simulate <scenario_id> <reviewer> | simulator a2a delegate <role> <tenant_scope> <session_scope> <capability> <approval> | simulator vector list | simulator vector report | simulator vector baseline <reviewer> | simulator vector assess <scenario_id> <reviewer> | simulator vector simulate <scenario_id> <reviewer> | simulator vector query <role> <tenant_scope> <classification> <purpose> <result_kind> | simulator supplychain list | simulator supplychain report | simulator supplychain baseline <reviewer> | simulator supplychain assess <scenario_id> <reviewer> | simulator supplychain simulate <scenario_id> <reviewer> | simulator capstone list | simulator capstone report | simulator capstone assess <scenario_id> <reviewer> | simulator capstone simulate <scenario_id> <source> <role> <scope> <approval> | simulator recon list | simulator recon inspect <scenario_id> <viewer|operator|reviewer> | simulator list | simulator call <tool_name> <resource_id> | simulator security list | simulator security evaluate <source> <action> <role> <session_scope> [none|approved] | simulator security call <source> <role> <scope> <approval> <tool> <resource>\n";
   return 64;
 }

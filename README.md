@@ -20,8 +20,10 @@ All operations are local mock previews. **No cloud accounts, DNS zones, virtual 
 - **Cross-zone resilience model (synthetic):** 17 modeled multi-stage trust-boundary risks across public application, DMZ, gateway, development, database, file services, retrieval and identity. Every unsafe transition is denied as a local policy fixture; one read-only health preview provides a positive control.
 - **AI component intake (synthetic):** 26 supply-chain risk fixtures spanning MCP server releases, dependency resolution, unsafe deserialization, model weights, datasets, adapters, tokenizers, build infrastructure, hardware and third parties. The fail-closed C++ policy evaluates *simulated* evidence. No real artifact is loaded, scanned, hashed or cryptographically verified.
 - **Embedding privacy (synthetic):** 22 vector retrieval, inversion-exposure and tenant-isolation risk fixtures; no real embedding model, vector database or retrieval API is connected.
-- **Multi-agent / A2A safety (synthetic):** 24 offline agent discovery, trust, delegation, task integrity and output-safety fixtures; no real Agent Card lookup, A2A transport, cryptographic verification, DNS resolution or network agent connection is implemented. **123 total synthetic cases** are currently inventoried, not proven vulnerabilities.
+- **Multi-agent / A2A safety (synthetic):** 24 offline agent discovery, trust, delegation, task integrity and output-safety fixtures; no real Agent Card lookup, A2A transport, cryptographic verification, DNS resolution or network agent connection is implemented. **145 total synthetic cases** are currently inventoried, not proven vulnerabilities.
 - **Testing:** CTest + ExUnit; dependency scanning, fuzzing, static analysis, reproducibility tests and observability are delivery gates.
+
+- **Living threat model (synthetic):** 22 offline hypotheses, rules-of-engagement, trust-zone, evidence and go/hold/no-go cases; deterministic assumption lifecycle and a synthetic decision brief. This is not reconnaissance of real targets, a live risk engine, or external attack execution.
 
 ## Repository layout
 
@@ -68,6 +70,14 @@ ctest --preset windows-msvc -C Release --output-on-failure
 .\out\build\windows-msvc\Release\simulator.exe a2a simulate untrusted_agent_card reviewer
 .\out\build\windows-msvc\Release\simulator.exe a2a delegate operator same_tenant same_session read_only approved
 .\out\build\windows-msvc\Release\simulator.exe a2a delegate operator other_tenant same_session read_only approved
+.\out\build\windows-msvc\Release\simulator.exe threat list
+.\out\build\windows-msvc\Release\simulator.exe threat assumptions
+.\out\build\windows-msvc\Release\simulator.exe threat zones
+.\out\build\windows-msvc\Release\simulator.exe threat brief reviewer
+.\out\build\windows-msvc\Release\simulator.exe threat report
+.\out\build\windows-msvc\Release\simulator.exe threat simulate out_of_scope_component reviewer
+.\out\build\windows-msvc\Release\simulator.exe threat plan reviewer approved_fixture validated approved_window approved
+.\out\build\windows-msvc\Release\simulator.exe threat plan reviewer out_of_scope validated approved_window approved
 .\out\build\windows-msvc\Release\simulator.exe capstone report
 .\out\build\windows-msvc\Release\simulator.exe capstone assess rag_file_boundary reviewer
 .\out\build\windows-msvc\Release\simulator.exe capstone simulate rag_file_boundary retrieved_document reviewer same_session approved
@@ -118,7 +128,7 @@ Architecture, service scenarios, the engineering technique matrix and delivery g
 
 ### Complete layered architecture and trust boundaries
 
-The following is the **target architecture**, not an assertion that every service exists yet. Solid flow lines represent designed data paths. The compiled baseline is the local C++ simulator, native authorization gate, offline security-case inventory and offline cross-zone control model, supply-chain intake, vector privacy and A2A delegation fixtures; all network ingress, real vector search, embedding creation, inference, durable memory and interactive UI components remain planned.
+The following is the **target architecture**, not an assertion that every service exists yet. Solid flow lines represent designed data paths. The compiled baseline is the local C++ simulator, native authorization gate, offline security-case inventory and offline cross-zone control model, supply-chain intake, vector privacy, A2A delegation and threat-model decision fixtures; all network ingress, real vector search, embedding creation, inference, durable memory and interactive UI components remain planned.
 
 ```mermaid
 flowchart TD
@@ -235,12 +245,44 @@ flowchart TD
     POLICY -. future integration .-> OBS
     VSEC -. future audit / vector query telemetry .-> OBS
     A2AGATE -. future agent handoff traces .-> OBS
+    subgraph THREAT[Threat-model control plane - offline cases, live evidence integration planned]
+        direction TB
+        TFLOW[Asset and tool boundary inventory - static fixture]
+        TASSUME[Observation and hypothesis register - implemented locally]
+        TPROV[Attributable and corroborated evidence gate - implemented]
+        TSTATE[Validated / invalidated assumption states - implemented]
+        TZONES[Trust-zone crossing map / critical assets - static fixture]
+        TROE[Scope / time window / approval / activity limits - implemented offline]
+        TPRIOR[Prioritized control-review paths - synthetic preview]
+        TBRIEF[Versioned brief / blocker / next action - synthetic preview]
+        TFEED[Counterevidence and feedback cycle - local state transition]
+        TFLOW --> TASSUME
+        TASSUME --> TPROV
+        TPROV --> TSTATE
+        TSTATE --> TZONES
+        TZONES --> TROE
+        TROE -->|In-scope validated fixture only| TPRIOR
+        TPRIOR --> TBRIEF
+        TBRIEF --> TFEED
+        TFEED -. revise assumptions .-> TASSUME
+    end
+    NATIVE --> TASSUME
+    TSTATE -. unverified assumptions cannot authorize tools .-> DENY
+    TPRIOR -->|Safe local preview| FIX
+    TROE -->|Prohibited or unapproved case| DENY
+    AUTH -. future trusted scope binding .-> TROE
+    POLICY -. future evidence and action policy .-> TROE
+    A2AGATE -. synthetic boundary transition .-> TZONES
+    VSEC -. synthetic data classification .-> TZONES
+    SCFIX -. synthetic provenance .-> TPROV
+    CHAIN -. modeled boundary paths .-> TZONES
+    TBRIEF -. future structured risk audit .-> OBS
     EXT[Live providers and corporate networks - NOT connected] -. no external effects .-> FIX
 ```
 
 **Trust zones:** the public ingress is untrusted; agent prompts, retrieved documents, web pages, model output, tool results and memory are **data-only**; authority comes from independently authenticated application context. Private tool schemas, backend versions, document names, embedding configuration and debug details require separate exposure controls. Rendered health and error responses must disclose no infrastructure topology. The native C++ CLI is a developer diagnostic, not an MCP or HTTP authorization endpoint. The supply-chain section depicts proposed intake paths, **not trusted links already implemented between registries and running components**. Embeddings are semantically informative representations and must never be treated as one-way hashes or inherently anonymized data. **Agent Cards and agent outputs are discovery/data inputs, not authorization**: the simulated strict signed-card requirement is an optional hardening policy, not a claim that every compliant A2A Agent Card MUST be signed.
 
-**Implementation boundary:** `simulator security call` enforces the local native permission preview. `simulator recon inspect` separately exercises synthetic information-disclosure decisions. `simulator capstone simulate` evaluates offline risk-chain fixtures and never opens a session, network route or privilege. `simulator supplychain` checks metadata-only local fixtures, not actual signatures, SBOMs, hashes or models. `simulator vector` checks synthetic retrieval-policy metadata without computing embeddings, connecting to a vector database, running an inversion model or exporting data. None of these commands accepts real credentials, sends requests or operates on live tenants. The new `simulator a2a` command is a local metadata-only gate, not an A2A server, protocol parser or cryptographic signature verifier. The current Elixir adapter does not yet enforce these gates end to end. A future network service MUST bind source, identity, role and approval server-side, not allow clients or models to select them.
+**Implementation boundary:** `simulator security call` enforces the local native permission preview. `simulator recon inspect` separately exercises synthetic information-disclosure decisions. `simulator capstone simulate` evaluates offline risk-chain fixtures and never opens a session, network route or privilege. `simulator supplychain` checks metadata-only local fixtures, not actual signatures, SBOMs, hashes or models. `simulator vector` checks synthetic retrieval-policy metadata without computing embeddings, connecting to a vector database, running an inversion model or exporting data. None of these commands accepts real credentials, sends requests or operates on live tenants. The new `simulator a2a` command is a local metadata-only gate, not an A2A server, protocol parser or cryptographic signature verifier. The new `simulator threat` commands provide offline evidence-state, scope, path and brief previews; they do not assess real entities, calculate a validated risk score or enforce rules for an actual connected server. The current Elixir adapter does not yet enforce these gates end to end. A future network service MUST bind source, identity, role and approval server-side, not allow clients or models to select them.
 
 ### Boundaries and safety
 
@@ -509,11 +551,50 @@ The local `a2a delegate` command accepts role, scope, capability and approval **
 
 # Expected uniform denial: cross-tenant or unauthorized scope
 .\out\build\windows-msvc\Release\simulator.exe a2a delegate operator other_tenant same_session read_only approved
+.\out\build\windows-msvc\Release\simulator.exe threat list
+.\out\build\windows-msvc\Release\simulator.exe threat assumptions
+.\out\build\windows-msvc\Release\simulator.exe threat zones
+.\out\build\windows-msvc\Release\simulator.exe threat brief reviewer
+.\out\build\windows-msvc\Release\simulator.exe threat report
+.\out\build\windows-msvc\Release\simulator.exe threat simulate out_of_scope_component reviewer
+.\out\build\windows-msvc\Release\simulator.exe threat plan reviewer approved_fixture validated approved_window approved
+.\out\build\windows-msvc\Release\simulator.exe threat plan reviewer out_of_scope validated approved_window approved
 .\out\build\windows-msvc\Release\simulator.exe a2a delegate operator same_tenant same_session privileged approved
 .\out\build\windows-msvc\Release\simulator.exe a2a delegate operator same_tenant same_session read_only none
 ```
 
 **Acceptance:** every one of 24 negative fixtures must fail at its specifically expected gate; unknown IDs and unauthorized review access must receive identical denial; the approved fixture is read-only, deterministic and contains no network effects; `a2a report` must expose **zero** actual external tasks and must not invent real attack-success measurements. Current suite totals **36 CTest targets**, including 7 newly added for A2A. **Pending:** real agent discovery, A2A transport/method conformance, Agent Card JWS verification, outbound TLS server identity checks, protocol version negotiation, callback security, production role binding, supervisor recovery, network-level audit telemetry and runtime load/fault testing.
+
+## Living threat model — evidence, scope and decisions (offline synthetic controls)
+
+This stage adds **22 synthetic threat-model cases**. The combined inventory is **14 agent + 20 exposure + 17 cross-zone + 26 supply-chain + 22 vector + 24 multi-agent + 22 threat-model = 145 cases**. These are **risk/control test fixtures**, not detected vulnerabilities. All paths and service names in this stage are fictional examples for local review, not recommendations to attack real systems.
+
+### Evidence lifecycle and threat-model gates
+
+- **Fact vs hypothesis:** observations and hypotheses are distinct from validated and invalidated conclusions. A promotion to `validated` requires attributable, independently corroborated evidence. Invalidated hypotheses remain invalidated unless a new hypothesis ID and fresh evidence are introduced.
+- **Provenance and contradiction:** associate source, observation, collection time (in a future persistence layer), confidence, disconfirming evidence and validation status with every hypothesis. The current binary contains a **static sample register** and in-process transition function, not a persistent evidence database or collector.
+- **Asset and trust-zone register:** identify critical data, agent capabilities, tools, identity, memory, model and artifact boundaries. Explicitly record control owners, permitted transitions and unresolved paths. Current zones are static synthetic labels.
+- **Rules of engagement:** scope, tenant, authorized window, stakeholder approval, read-only mode, no destructive operations, no external access, data minimization and event reporting are **hard gates**. For this offline fixture, no CLI argument is trusted proof of real-world approval.
+- **Decision and prioritization:** a missing prerequisite remains `hold`; forbidden or out-of-scope work is `no_go`; a fully checked safe local action is `go_preview`—**never authorization for an external operation**. Model paths are decision records, not attack recipes.
+- **Auditability and delivery:** the static brief includes synthetic knowns, unknowns, constraints, blockers, next safe action and zero real findings. Version, decision history, proof links, environment discovery and risk scoring require a future trusted service.
+
+### Windows commands — synthetic only
+
+```powershell
+.\out\build\windows-msvc\Release\simulator.exe threat list
+.\out\build\windows-msvc\Release\simulator.exe threat assumptions
+.\out\build\windows-msvc\Release\simulator.exe threat zones
+.\out\build\windows-msvc\Release\simulator.exe threat assess unverified_component_inventory reviewer
+.\out\build\windows-msvc\Release\simulator.exe threat simulate out_of_scope_component reviewer
+.\out\build\windows-msvc\Release\simulator.exe threat plan reviewer approved_fixture validated approved_window approved
+.\out\build\windows-msvc\Release\simulator.exe threat plan reviewer out_of_scope validated approved_window approved
+.\out\build\windows-msvc\Release\simulator.exe threat brief reviewer
+.\out\build\windows-msvc\Release\simulator.exe threat report
+```
+
+### Acceptance gates and metrics
+
+Measure evidence state transition correctness, missing-provenance rejection, hypothesis promotion without corroboration (target **zero**), incorrect allowances for out-of-scope decisions (target **zero**), tenant isolation errors (target **zero**), audit/reporting gate coverage, decision reproducibility and stale hypothesis counts. Track `hold` and `no_go` separately in the future planner; the current CLI uses a uniform denial for unauthorized queries. Tests must cover negative and positive local fixtures and Debug, Release and Windows CI. **No live red-team operations, risk scores, target exposure measurements or actual client reporting have been performed.**
 
 ## Simulator service and collaboration scope
 
@@ -564,6 +645,7 @@ Proposed synthetic scenarios include `scheduled_maintenance`, `urgent_ticket`, `
 ### Metrics
 
 - Tool allowlist coverage, unsafe cross-zone transition denial, and successful negative tests.
+- Hypothesis corroboration/rejection ratio, unresolved blockers, scope-denial coverage, trust-zone coverage and synthetic decision reproducibility.
 - API contract pass rate and simulation determinism rate.
 - Native crash count under fuzzing; memory sanitizer findings.
 - Median and p95 latency of isolated native calls.
