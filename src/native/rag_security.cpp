@@ -122,7 +122,8 @@ std::string list(){
   std::string s=R"({"ok":true,"mode":"simulation_only","scenario_count":30,"scenarios":[)";
   bool first=true;
   for(const auto& c:scenarios()){
-    if(!first)s+=',';first=false;
+    if(!first) s+=',';
+    first=false;
     s+="{\"id\":\""+std::string(c.id)+"\",\"domain\":\""+std::string(c.domain)+"\"}";
   }
   return s+"]}";
