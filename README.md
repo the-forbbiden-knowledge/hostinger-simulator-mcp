@@ -865,11 +865,19 @@ The fixture lifecycle is: **mission and authorized scope → evidence / hypothes
 **Release gates:** 24/24 synthetic failure fixtures must deny at the intended gate; unauthorized and unknown selectors receive opaque responses; approved decisions are read-only and carry `network_access:false` and `side_effects:false`; unverified financial impact remains JSON `null`; 107 CTest targets pass both locally and in Windows CI for the exact published commit. Pending: live AI evaluations, real authentication, multi-party policy and responsible-AI review, consistent trace correlation, incident handling, and measurable operational impact.
 
 
+## Bounded subprocess-tree regression
+
+The existing offline output collector now launches native preview subprocesses in their own process group (POSIX) or Windows process group and stops ordinary child processes on overflow or timeout. POSIX uses group-directed termination; Windows uses a scoped descendant-tree termination command with direct-process fallback. The caller's process group is never signaled.
+
+Two additional cross-platform tests spawn a **child that starts its own descendant**. They then force timeout and output overflow, respectively, and verify that the descendant did not complete its delayed write. The bounded subprocess suite now contains **13 tests**. The recovery, telemetry and Elixir integration suites remain in CI.
+
+**Limitation:** Groups do not contain a process that deliberately detaches, exits early or evades the parent's descendant relationship. This is not an OS sandbox, a Job Object policy, a cgroup or a guarantee against arbitrary hostile executables. Production process-tree isolation needs separately authorized deployment controls.
+
 ## Bounded native subprocess output and deadline
 
 The offline recovery and regression-telemetry tools now share a **streaming subprocess collector**. It reads at most 64 KiB per invoked preview into application memory, merges stdout/stderr into a single bounded pipe, and directly terminates the child when its output budget or five-second deadline is exceeded. The runner does not use a shell. Failure responses are opaque and include no untrusted output in public diagnostics.
 
-Independent fault-injection tests exercise exact-boundary output, one-byte overflow, unbounded stdout/stderr flooding, slow output trickles, hung processes, nonexistent executables, nonzero exits, invalid budgets and parallel calls. Both Windows and Linux CI enforce the regression. The existing native C++ and OTP suites are unchanged.
+The 13 independent fault-injection tests exercise exact-boundary output, one-byte overflow, unbounded stdout/stderr flooding, slow output trickles, hung processes, nonexistent executables, nonzero exits, invalid budgets and parallel calls. Both Windows and Linux CI enforce the regression. The existing native C++ and OTP suites are unchanged.
 
 **Boundary:** This is bounded Python-side capture, not OS-enforced memory/CPU accounting, guaranteed process-tree termination or a production containment sandbox. The 64 KiB cap applies to the collector's stored output; native child memory still requires separate isolation measures when using untrusted executables.
 

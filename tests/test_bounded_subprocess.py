@@ -2,6 +2,8 @@
 from pathlib import Path
 import sys
 import threading
+import time
+import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
@@ -63,9 +65,33 @@ class BoundedSubprocessTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     run_bounded([sys.executable], timeout_s=seconds, max_output=cap)
 
+    def test_descendant_cannot_write_after_timeout(self):
+        with tempfile.TemporaryDirectory(prefix='child-tree-check-') as folder:
+            marker = Path(folder) / 'unwanted-write.txt'
+            descendant = f'import time, pathlib;time.sleep(1.3);pathlib.Path({str(marker)!r}).write_text("escaped")'
+            parent = ('import subprocess,sys;'
+                      f'child=subprocess.Popen([sys.executable,"-c",{descendant!r}]);'
+                      'print("ready",flush=True);child.wait()')
+            result = self.run_py(parent, timeout=0.65)
+            self.assertEqual(result.reason, 'timeout')
+            time.sleep(1.5)
+            self.assertFalse(marker.exists(), 'descendant escaped process termination')
+
+    def test_descendant_cannot_write_after_output_overflow(self):
+        with tempfile.TemporaryDirectory(prefix='child-tree-output-') as folder:
+            marker = Path(folder) / 'unwanted-write.txt'
+            descendant = f'import time, pathlib;time.sleep(1.3);pathlib.Path({str(marker)!r}).write_text("escaped")'
+            parent = ('import subprocess,sys,os;'
+                      f'child=subprocess.Popen([sys.executable,"-c",{descendant!r}]);'
+                      'os.write(1,b"X"*70000);child.wait()')
+            result = self.run_py(parent, timeout=3, cap=8192)
+            self.assertEqual(result.reason, 'output_limit')
+            time.sleep(1.5)
+            self.assertFalse(marker.exists(), 'descendant escaped output-limit termination')
+
     def test_parallel_independent_invocations(self):
         results = []
-        threads = [threading.Thread(target=lambda: results.append(self.run_py("print('ok')")))
+        threads = [threading.Thread(target=lambda: results.append(self.run_py("print('ok')", timeout=5)))
                    for _ in range(6)]
         for thread in threads: thread.start()
         for thread in threads: thread.join()
