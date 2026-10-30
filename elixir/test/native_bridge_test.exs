@@ -13,6 +13,50 @@ defmodule HostingerSimulator.NativeBridgeTest do
              NativeBridge.call("missing.exe", "vps.list", String.duplicate("x", 257))
   end
 
+  test "resource dot segments and path-like input fail before Port execution" do
+    for resource <- [".", "..", "...", ".a", "a.", "a..b", "a...b",
+                     "../private", "a/b", "a\\b", "a%2eb", "a b", "a\n", "a\u0000b"] do
+      assert {:error, :invalid_arguments} =
+               NativeBridge.call("missing.exe", "monitoring.health", resource)
+    end
+  end
+
+  test "ASCII resource byte contract matches native single-byte grammar" do
+    for value <- 0..255 do
+      resource = <<value>>
+      is_allowed =
+        (value >= ?a and value <= ?z) or
+          (value >= ?A and value <= ?Z) or
+          (value >= ?0 and value <= ?9) or value in [?_, ?-, ?:, ?@]
+      expected = if is_allowed, do: :native_executable_missing, else: :invalid_arguments
+      assert {:error, ^expected} =
+               NativeBridge.call("missing.exe", "monitoring.health", resource)
+    end
+  end
+
+  test "resource boundary lengths and established identifiers remain compatible" do
+    for value <- ["demo", "mail@example.test", "namespace:resource",
+                  String.duplicate("x", 256)] do
+      assert {:error, :native_executable_missing} =
+               NativeBridge.call("missing.exe", "monitoring.health", value)
+    end
+
+    assert {:error, :invalid_arguments} =
+             NativeBridge.call("missing.exe", "monitoring.health", "")
+    assert {:error, :invalid_arguments} =
+             NativeBridge.call("missing.exe", "monitoring.health", String.duplicate("x", 257))
+  end
+
+  test "tool names are lowercase canonical identifiers before Port execution" do
+    for tool <- ["", ".", "tool..name", "tool/name", "TOOL", "tool\n", String.duplicate("x", 129)] do
+      # Tool names with double dots are syntactically valid, but the native
+      # catalog still denies them; do not assert local rejection for that one.
+      if tool != "tool..name" do
+        assert {:error, :invalid_arguments} = NativeBridge.call("missing.exe", tool, "demo")
+      end
+    end
+  end
+
   test "real native binary returns bounded offline preview when available" do
     case System.get_env("SIMULATOR_NATIVE_EXE") do
       nil ->

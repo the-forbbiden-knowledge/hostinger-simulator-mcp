@@ -957,6 +957,12 @@ The native adapter now uses a fixed **5-second monotonic deadline** for the enti
 
 A dedicated Linux CI job compiles the native executable and runs ExUnit against the actual C++ process. It exercises successful and unsuccessful exit statuses, oversized output, repeated partial output that must not extend the deadline, and a real local native tool call. These are **integration tests** of a local preview boundary; they do not prove production fault tolerance, termination of every descendant process, or a service-level objective.
 
+## Elixir/native boundary input parity
+
+The Erlang Port adapter validates fixture-only resource identifiers using the same finite ASCII syntax and 256-byte limit as the native C++ entry point. Leading/trailing dots, consecutive dots, path separators, control bytes and invalid Unicode are denied **before** creating a native process. Tool names must also have a bounded lowercase identifier grammar, while the C++ tool registry remains the authoritative allowlist. The native validator independently enforces the resource contract again.
+
+Cross-language ExUnit negative tests cover malformed names, boundary lengths and all 256 single-byte values; native CTest independently checks the same byte classes across all 17 documented tools. The extra validation is defense-in-depth for the *offline* native bridge, not real authentication, production authorization, or a generic pathname sanitizer.
+
 ## Native resource identifier boundary
 
 The offline native simulator treats resource values as **opaque fixture identifiers**, never filesystem paths, network URLs, or live tenant objects. Its validation is ASCII-only with a 256-byte limit and a finite character allowlist. It now additionally rejects leading/trailing dots and consecutive dots to avoid ambiguous dot-segment tokens if a future adapter interprets identifiers differently.

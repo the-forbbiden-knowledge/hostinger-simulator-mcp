@@ -10,7 +10,7 @@ defmodule HostingerSimulator.NativeBridge do
   def call(executable, tool, resource)
       when is_binary(executable) and is_binary(tool) and is_binary(resource) do
     cond do
-      byte_size(tool) > 128 or byte_size(resource) > 256 ->
+      not valid_tool?(tool) or not valid_resource?(resource) ->
         {:error, :invalid_arguments}
 
       not File.regular?(executable) ->
@@ -32,6 +32,23 @@ defmodule HostingerSimulator.NativeBridge do
           ArgumentError -> {:error, :native_start_failed}
         end
     end
+  end
+
+  # Only native fixture names, never paths, URIs or arbitrary Unicode. The
+  # C++ implementation remains the final enforcement point for this contract.
+  defp valid_tool?(tool) do
+    size = byte_size(tool)
+    size > 0 and size <= 128 and String.valid?(tool) and
+      Regex.match?(~r/\A[a-z][a-z0-9_.-]*\z/, tool)
+  end
+
+  defp valid_resource?(resource) do
+    size = byte_size(resource)
+    size > 0 and size <= 256 and String.valid?(resource) and
+      Regex.match?(~r/\A[A-Za-z0-9_.:@-]+\z/, resource) and
+      not String.starts_with?(resource, ".") and
+      not String.ends_with?(resource, ".") and
+      not String.contains?(resource, "..")
   end
 
   defp collect(port, chunks, size, deadline_ms) do
