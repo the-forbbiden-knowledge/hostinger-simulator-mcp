@@ -27,7 +27,6 @@ project/
   src/native/                 Native simulator and CLI
   tests/                      Native deterministic tests
   elixir/                     Minimal Mix application with Port wrapper
-  scripts/windows/            PowerShell bootstrap and single-root-commit management
   .github/workflows/          Windows build/test CI
 ```
 
@@ -54,8 +53,6 @@ cmake --build --preset windows-ninja
 ctest --preset windows-ninja --output-on-failure
 .\out\build\windows-ninja\simulator.exe list
 ```
-
-An optional helper is provided at `scripts/windows/bootstrap.ps1`.
 
 ## Capability inventory — planned vs implemented
 
@@ -215,11 +212,17 @@ All performance and reliability claims must come from measured executions, not a
 - Gate 10: private manifests generated in companion library.
 
 
-## Git policy: one root commit
+## Git policy: consistent commit messages
 
-The intended branch policy is exactly **one root commit** with message `Initial commit`. Changes are consolidated by amending that commit. Remote history is verified before any force-with-lease update.
+This project permits multiple commits. Use the exact commit message `Initial commit` for every new commit.
 
-For local changes, use `scripts/windows/update-single-commit.ps1` to amend the existing root commit. History replacement must use an explicit remote-head check and `--force-with-lease` where branch protection permits; never bypass a rejection or overwrite unreviewed collaborator commits. Branch protection may prohibit rewriting history.
+```powershell
+git add .
+git commit -m "Initial commit"
+git push origin main
+```
+
+Use normal fast-forward pushes by default. Do not rewrite remote history or use `--force` to enforce a single-commit history. If branch protection or remote changes reject a push, inspect and resolve the conflict rather than bypassing protections. Keep the working tree clean after each completed change.
 
 ## Source licensing and privacy
 
