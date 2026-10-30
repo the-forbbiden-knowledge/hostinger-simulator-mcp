@@ -865,6 +865,12 @@ The fixture lifecycle is: **mission and authorized scope → evidence / hypothes
 **Release gates:** 24/24 synthetic failure fixtures must deny at the intended gate; unauthorized and unknown selectors receive opaque responses; approved decisions are read-only and carry `network_access:false` and `side_effects:false`; unverified financial impact remains JSON `null`; 107 CTest targets pass both locally and in Windows CI for the exact published commit. Pending: live AI evaluations, real authentication, multi-party policy and responsible-AI review, consistent trace correlation, incident handling, and measurable operational impact.
 
 
+## Elixir/OTP Port resilience gates
+
+The native adapter now uses a fixed **5-second monotonic deadline** for the entire call, not a new timeout per output chunk. Responses larger than **64 KiB** are rejected, and both timeout and oversized-output failures close the owned Port. Unknown binaries and invalid inputs continue to fail closed. No privileged subprocess or remote service is invoked by the test fixtures.
+
+A dedicated Linux CI job compiles the native executable and runs ExUnit against the actual C++ process. It exercises successful and unsuccessful exit statuses, oversized output, repeated partial output that must not extend the deadline, and a real local native tool call. These are **integration tests** of a local preview boundary; they do not prove production fault tolerance, termination of every descendant process, or a service-level objective.
+
 ## Cross-cutting native reliability verification
 
 In addition to deterministic policy fixtures, the native build now validates the **real executable boundary**. The checks enumerate all 17 service tools, parse every successful result as JSON, verify the read-only contract and test invalid/oversized resources and unknown tool names. A separate C++ unit performs 4,000 concurrent valid/invalid calls using eight worker threads and asserts deterministic output, resource separation, boundary validation and correct string escaping. Every check runs offline, requires no external accounts and does not modify infrastructure.

@@ -1,0 +1,26 @@
+name: Elixir OTP bridge integration
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  bridge-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Erlang and Elixir
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          otp-version: '27.3.3'
+          elixir-version: '1.18.3'
+      - name: Configure local native preview
+        run: cmake --preset portable
+      - name: Build local native preview
+        run: cmake --build --preset portable --parallel 2
+      - name: Exercise Elixir Port with real native executable
+        working-directory: elixir
+        env:
+          SIMULATOR_NATIVE_EXE: ${{ github.workspace }}/out/build/portable/simulator
+        run: mix test --trace
