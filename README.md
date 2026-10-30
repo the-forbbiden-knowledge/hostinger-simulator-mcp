@@ -865,6 +865,21 @@ The fixture lifecycle is: **mission and authorized scope → evidence / hypothes
 **Release gates:** 24/24 synthetic failure fixtures must deny at the intended gate; unauthorized and unknown selectors receive opaque responses; approved decisions are read-only and carry `network_access:false` and `side_effects:false`; unverified financial impact remains JSON `null`; 107 CTest targets pass both locally and in Windows CI for the exact published commit. Pending: live AI evaluations, real authentication, multi-party policy and responsible-AI review, consistent trace correlation, incident handling, and measurable operational impact.
 
 
+## Pre-commit and pre-push Git-object safeguards
+
+The optional local Git hooks in `.githooks/` check **Git object contents** before ordinary command-line commits and pushes. The pre-commit gate reads the exact staged blob IDs from the index; it does not trust the current working tree. The pre-push gate reads Git's ref updates and examines **every commit to be sent**, including intermediate commits whose private files were later deleted. Newly created branches are checked across their full reachable history. If a required Git object cannot be read, the gate fails closed.
+
+Enable these hooks per clone with Git installed and Python 3 available:
+
+~~~powershell
+git config --local core.hooksPath .githooks
+python tools/git_publication_gate.py --staged
+~~~
+
+The usual `git commit` and `git push` commands then invoke the gates. To disable the optional per-clone configuration, use `git config --local --unset core.hooksPath`. The pipeline independently runs the staged-object guard after checkout and keeps the existing working-tree snapshot gate. Synthetic regression tests prove index/worktree disagreement and an added-then-deleted private file in outgoing commits are rejected.
+
+**Boundaries:** hooks are per-clone opt-in and can be bypassed (including with `--no-verify`, direct API writes, or another client). They are preventive for normal local Git usage but **not server-side policy**. GitHub CI executes after publication; use repository rulesets, review requirements and centrally enforced secret scanning to establish an actual release checkpoint. Object scanning uses heuristic categories; it cannot attest rights, identify every secret, or guarantee no disclosure. The program deliberately omits original filenames and sensitive contents from diagnostics.
+
 ## Source snapshot guard — CI gate
 
 Both Windows and Linux workflows now run a read-only, stdlib-only source inspection **before build**. The policy checks every Git-tracked file in the checkout for prohibited private document/archive/key formats, sensitive library and customer-data directories, symlinks requiring manual review, unusual oversized files and selected high-confidence credential signatures. Its JSON report includes **hashed path identifiers and risk categories only**; it never prints candidate secret values or original private filenames.

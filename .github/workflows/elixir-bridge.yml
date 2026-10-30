@@ -15,6 +15,8 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s tests -p 'test_publication_guard.py' -v
           python3 tools/publication_guard.py --root .
+          python3 -m unittest discover -s tests -p 'test_git_publication_gate.py' -v
+          python3 tools/git_publication_gate.py --staged --root .
       - name: Setup Erlang and Elixir
         uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:

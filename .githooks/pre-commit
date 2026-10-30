@@ -1,0 +1,16 @@
+#!/bin/sh
+# Optional local gate; per-clone opt-in via core.hooksPath.
+set -eu
+PY=
+for candidate in python3 python; do
+  if command -v "$candidate" >/dev/null 2>&1 &&
+     "$candidate" -c 'import sys; sys.exit(0 if sys.version_info.major == 3 else 1)' >/dev/null 2>&1; then
+    PY=$candidate
+    break
+  fi
+done
+if [ -z "$PY" ]; then
+  echo "Publication preflight requires an operational Python 3 interpreter" >&2
+  exit 2
+fi
+exec "$PY" tools/git_publication_gate.py --staged
