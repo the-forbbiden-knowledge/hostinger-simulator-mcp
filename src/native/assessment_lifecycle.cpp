@@ -45,7 +45,8 @@ std::string list() {
   std::string o=R"({"ok":true,"mode":"simulation_only","network_access":false,"steps":[)";
   bool first=true;
   for(const auto& s:transitions()){
-    if(!first)o+=',';first=false;
+    if (!first) o += ',';
+    first = false;
     o+=R"({"from":")"+std::string(s.current)+R"(","to":")"+
       std::string(s.next)+R"(","required_evidence":")"+std::string(s.required_evidence)+R"("})";
   }

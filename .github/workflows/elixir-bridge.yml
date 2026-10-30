@@ -16,9 +16,11 @@ jobs:
           otp-version: '27.3.3'
           elixir-version: '1.18.3'
       - name: Configure local native preview
-        run: cmake --preset portable
+        run: cmake --preset portable -DCMAKE_CXX_FLAGS=-Werror
       - name: Build local native preview
         run: cmake --build --preset portable --parallel 2
+      - name: Run all native Linux regression tests
+        run: ctest --preset portable --output-on-failure
       - name: Exercise Elixir Port with real native executable
         working-directory: elixir
         env:
