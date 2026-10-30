@@ -865,6 +865,14 @@ The fixture lifecycle is: **mission and authorized scope → evidence / hypothes
 **Release gates:** 24/24 synthetic failure fixtures must deny at the intended gate; unauthorized and unknown selectors receive opaque responses; approved decisions are read-only and carry `network_access:false` and `side_effects:false`; unverified financial impact remains JSON `null`; 107 CTest targets pass both locally and in Windows CI for the exact published commit. Pending: live AI evaluations, real authentication, multi-party policy and responsible-AI review, consistent trace correlation, incident handling, and measurable operational impact.
 
 
+## Bounded native subprocess output and deadline
+
+The offline recovery and regression-telemetry tools now share a **streaming subprocess collector**. It reads at most 64 KiB per invoked preview into application memory, merges stdout/stderr into a single bounded pipe, and directly terminates the child when its output budget or five-second deadline is exceeded. The runner does not use a shell. Failure responses are opaque and include no untrusted output in public diagnostics.
+
+Independent fault-injection tests exercise exact-boundary output, one-byte overflow, unbounded stdout/stderr flooding, slow output trickles, hung processes, nonexistent executables, nonzero exits, invalid budgets and parallel calls. Both Windows and Linux CI enforce the regression. The existing native C++ and OTP suites are unchanged.
+
+**Boundary:** This is bounded Python-side capture, not OS-enforced memory/CPU accounting, guaranteed process-tree termination or a production containment sandbox. The 64 KiB cap applies to the collector's stored output; native child memory still requires separate isolation measures when using untrusted executables.
+
 ## Offline observability and contract regression gate
 
 The cross-platform pipelines now run a native regression telemetry probe against the **built local executable**, not a recorded fixture. It inventories the 17 preview tools, performs three rounds of invocation (**51 accepted previews**), and separately checks **four expected denials**. Each result is JSON-validated for the correct tool, domain, synthetic resource and zero external side effects.

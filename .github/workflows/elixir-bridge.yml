@@ -28,6 +28,10 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s tests -p 'test_recovery_rehearsal.py' -v
           python3 tools/recovery_rehearsal.py --simulator "$SIMULATOR_NATIVE_EXE"
+      - name: Bound local child output and deadline under overload
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_bounded_subprocess.py' -v
       - name: Verify synthetic native telemetry and negative contracts
         env:
           SIMULATOR_NATIVE_EXE: ${{ github.workspace }}/out/build/portable/simulator

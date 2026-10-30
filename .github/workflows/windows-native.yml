@@ -23,6 +23,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python tools/recovery_rehearsal.py --simulator "$env:SIMULATOR_NATIVE_EXE"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Bound local child output and deadline under overload
+        run: |
+          python -m unittest discover -s tests -p "test_bounded_subprocess.py" -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify synthetic native telemetry and negative contracts
         env:
           SIMULATOR_NATIVE_EXE: ${{ github.workspace }}/out/build/windows-msvc/Release/simulator.exe

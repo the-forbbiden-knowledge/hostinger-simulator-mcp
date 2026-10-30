@@ -9,8 +9,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 import re
-import subprocess
-import time
+from bounded_subprocess import run_bounded
 from typing import Callable
 
 MAX_RESPONSE_BYTES = 65_536
@@ -29,18 +28,10 @@ class Probe:
 def native_runner(executable: Path) -> Callable[[tuple[str, ...]], Probe]:
     """Wrap only the locally built executable; never use a shell."""
     def call(args: tuple[str, ...]) -> Probe:
-        started = time.perf_counter()
-        try:
-            result = subprocess.run(
-                [str(executable), *args], capture_output=True,
-                timeout=MAX_PROBE_SECONDS, check=False,
-            )
-            return Probe(result.returncode, result.stdout,
-                         (time.perf_counter() - started) * 1000)
-        except subprocess.TimeoutExpired:
-            return Probe(124, b'', (time.perf_counter() - started) * 1000)
-        except OSError:
-            return Probe(127, b'', (time.perf_counter() - started) * 1000)
+        result = run_bounded([str(executable), *args],
+                             timeout_s=MAX_PROBE_SECONDS,
+                             max_output=MAX_RESPONSE_BYTES)
+        return Probe(result.returncode, result.stdout, result.elapsed_ms)
     return call
 
 

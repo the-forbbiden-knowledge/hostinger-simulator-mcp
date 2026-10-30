@@ -9,7 +9,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import subprocess
+from bounded_subprocess import run_bounded
 import tempfile
 import time
 
@@ -46,17 +46,14 @@ def validate_preview(raw: bytes) -> dict:
 def capture_preview(executable: Path) -> bytes:
     if not executable.is_file():
         raise RehearsalError('executable_missing')
-    try:
-        completed = subprocess.run(
-            [str(executable), 'call', 'monitoring.health', VALID_RESOURCE],
-            capture_output=True, timeout=5, check=False,
-        )
-    except (subprocess.TimeoutExpired, OSError) as exc:
-        raise RehearsalError('preview_execution_failed') from exc
-    if completed.returncode != 0 or completed.stderr:
+    result = run_bounded(
+        [str(executable), 'call', 'monitoring.health', VALID_RESOURCE],
+        timeout_s=5, max_output=MAX_SNAPSHOT_BYTES,
+    )
+    if result.reason is not None or result.returncode != 0:
         raise RehearsalError('preview_execution_failed')
-    validate_preview(completed.stdout)
-    return completed.stdout
+    validate_preview(result.stdout)
+    return result.stdout
 
 
 def _atomic_write(path: Path, data: bytes) -> None:
