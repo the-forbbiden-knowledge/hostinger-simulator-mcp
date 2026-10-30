@@ -4,7 +4,7 @@ defmodule HostingerSimulator.MixProject do
   def project do
     [
       app: :hostinger_simulator,
-      version: "0.1.0",
+      version: "6.6.6",
       elixir: ">= 1.16.0",
       start_permanent: Mix.env() == :prod,
       deps: []
