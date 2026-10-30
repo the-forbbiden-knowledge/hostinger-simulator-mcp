@@ -15,3 +15,11 @@ jobs:
         run: cmake --build --preset windows-msvc --config Release
       - name: Test
         run: ctest --preset windows-msvc -C Release --output-on-failure
+      - name: Validate disposable recovery and integrity checks
+        env:
+          SIMULATOR_NATIVE_EXE: ${{ github.workspace }}/out/build/windows-msvc/Release/simulator.exe
+        run: |
+          python -m unittest discover -s tests -p "test_recovery_rehearsal.py" -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/recovery_rehearsal.py --simulator "$env:SIMULATOR_NATIVE_EXE"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

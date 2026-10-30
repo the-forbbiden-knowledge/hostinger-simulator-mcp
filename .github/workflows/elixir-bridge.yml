@@ -21,6 +21,13 @@ jobs:
         run: cmake --build --preset portable --parallel 2
       - name: Run all native Linux regression tests
         run: ctest --preset portable --output-on-failure
+      - name: Validate disposable recovery and integrity checks
+        env:
+          SIMULATOR_NATIVE_EXE: ${{ github.workspace }}/out/build/portable/simulator
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_recovery_rehearsal.py' -v
+          python3 tools/recovery_rehearsal.py --simulator "$SIMULATOR_NATIVE_EXE"
       - name: Exercise Elixir Port with real native executable
         working-directory: elixir
         env:

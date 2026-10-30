@@ -865,6 +865,21 @@ The fixture lifecycle is: **mission and authorized scope → evidence / hypothes
 **Release gates:** 24/24 synthetic failure fixtures must deny at the intended gate; unauthorized and unknown selectors receive opaque responses; approved decisions are read-only and carry `network_access:false` and `side_effects:false`; unverified financial impact remains JSON `null`; 107 CTest targets pass both locally and in Windows CI for the exact published commit. Pending: live AI evaluations, real authentication, multi-party policy and responsible-AI review, consistent trace correlation, incident handling, and measurable operational impact.
 
 
+## Disposable recovery-integrity rehearsal
+
+A local-only Python 3 rehearsal exercises the **actual native monitoring preview** with no network or provider operations. The rehearsal captures a bounded synthetic JSON response, writes a temporary checkpoint and SHA-256 manifest, corrupts a temporary working fixture, verifies the checkpoint **before** recovery, and confirms the restored bytes against the expected hash.
+
+The regression tests reject missing or modified snapshots, mismatched manifest scope/checksum/size, invalid JSON, overlarge responses and any output claiming external side effects. Eight independent temporary scopes are exercised concurrently. A machine-readable event reports **synthetic** duration, checksum, result and temporary scope, without copying raw payloads or local paths into the event.
+
+The Windows and Linux CI workflows run these tests with the built executable. Rehearsal files are temporary and removed afterward. **This is not a production backup/restore service**; it does not establish a real recovery time objective (RTO), recovery point objective (RPO), data durability or incident readiness.
+
+Example (after building the native executable):
+
+~~~powershell
+python -m unittest discover -s tests -p test_recovery_rehearsal.py -v
+python tools/recovery_rehearsal.py --simulator .\out\build\windows-msvc\Release\simulator.exe
+~~~
+
 ## Elixir/OTP Port resilience gates
 
 The native adapter now uses a fixed **5-second monotonic deadline** for the entire call, not a new timeout per output chunk. Responses larger than **64 KiB** are rejected, and both timeout and oversized-output failures close the owned Port. Unknown binaries and invalid inputs continue to fail closed. No privileged subprocess or remote service is invoked by the test fixtures.
