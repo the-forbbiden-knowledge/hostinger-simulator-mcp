@@ -17,6 +17,7 @@ All operations are local mock previews. **No cloud accounts, DNS zones, virtual 
 - **Protocol (planned):** Model Context Protocol over JSON-RPC 2.0 with tool discovery and validated tool invocations. The current CLI is *not* MCP wire-compatible.
 - **Agent security bootstrap:** 14 synthetic threat-model cases; an executable fail-closed decision engine and guarded native preview call, with source trust, action scope, role, session boundary and explicit approval checks. There is no LLM, browser, database, credential store or network interception in this bootstrap.
 - **Exposure assessment (synthetic):** 20 offline reconnaissance surfaces across model, retrieval, MCP tool discovery, gateway, orchestration and monitoring; role-gated reports with uniform denials and no network probes.
+- **Cross-zone resilience model (synthetic):** 17 modeled multi-stage trust-boundary risks across public application, DMZ, gateway, development, database, file services, retrieval and identity. Every unsafe transition is denied as a local policy fixture; one read-only health preview provides a positive control.
 - **Testing:** CTest + ExUnit; dependency scanning, fuzzing, static analysis, reproducibility tests and observability are delivery gates.
 
 ## Repository layout
@@ -27,7 +28,7 @@ project/
   CMakePresets.json           Windows configuration presets
   include/simulator/          Native public interfaces
   src/native/                 Native simulator, policy engine and CLI
-  tests/                      Native, agent-policy and exposure tests
+  tests/                      Native, agent-policy, exposure and cross-zone tests
   elixir/                     Minimal Mix application with Port wrapper
   .github/workflows/          Windows build/test CI
 ```
@@ -49,6 +50,11 @@ ctest --preset windows-msvc -C Release --output-on-failure
 .\out\build\windows-msvc\Release\simulator.exe recon list
 .\out\build\windows-msvc\Release\simulator.exe recon inspect rag_source_attribution viewer
 .\out\build\windows-msvc\Release\simulator.exe recon inspect rag_source_attribution reviewer
+.\out\build\windows-msvc\Release\simulator.exe capstone list
+.\out\build\windows-msvc\Release\simulator.exe capstone report
+.\out\build\windows-msvc\Release\simulator.exe capstone assess rag_file_boundary reviewer
+.\out\build\windows-msvc\Release\simulator.exe capstone simulate rag_file_boundary retrieved_document reviewer same_session approved
+.\out\build\windows-msvc\Release\simulator.exe capstone simulate safe_health_preview trusted_application operator same_session approved
 .\out\build\windows-msvc\Release\simulator.exe security call web_page operator same_session approved vps.list demo
 .\out\build\windows-msvc\Release\simulator.exe security call trusted_application operator same_session approved vps.list demo
 ```
@@ -95,42 +101,64 @@ Architecture, service scenarios, the engineering technique matrix and delivery g
 
 ### Complete layered architecture and trust boundaries
 
-The following is the **target architecture**, not an assertion that every service exists yet. Solid flow lines represent designed data paths. The compiled baseline is the local C++ simulator, native authorization gate and offline security-case inventory; all network ingress, real retrieval, inference, durable memory and interactive UI components remain planned.
+The following is the **target architecture**, not an assertion that every service exists yet. Solid flow lines represent designed data paths. The compiled baseline is the local C++ simulator, native authorization gate, offline security-case inventory and offline cross-zone control model; all network ingress, real retrieval, inference, durable memory and interactive UI components remain planned.
 
 ```mermaid
 flowchart TD
-    U[Human user / MCP client — planned] --> EDGE[Windows API ingress — planned]
-    EDGE --> GW[Gateway: authentication, rate limiting, safe errors — planned]
-    GW --> RPC[JSON-RPC 2.0 and MCP contract validator — planned]
-    RPC --> AUTH[Server-derived principal, tenant, session and consent — planned]
-    AUTH --> ORCH[Phoenix API / LiveView — planned]
-    ORCH --> OTP[Elixir / OTP orchestration — Port adapter source present]
-    OTP --> AGENT[Agent loop / LLM orchestration — planned]
-    AGENT --> MODEL[Inference service / model — planned]
-    AGENT --> RET[RAG ingestion / retrieval — planned]
-    RET --> VDB[Embeddings / vector index — planned]
-    RET --> DOC[Document ACL, provenance and source redaction — planned]
-    AGENT --> MEM[Session and tenant-scoped memory — planned]
-    AGENT --> CAP[Per-principal tool discovery and schema minimization — planned]
-    CAP --> POLICY[Trusted action authorization — C++ local baseline]
+    USER[Human / MCP client - planned] --> EDGE[Windows API ingress - planned]
+    EDGE --> GW[Authentication, rate limits, safe errors - planned]
+    GW --> RPC[JSON-RPC / MCP schema validation - planned]
+    RPC --> AUTH[Server-owned identity, tenant, session - planned]
+    AUTH --> PHX[Phoenix / LiveView - planned]
+    PHX --> OTP[Elixir / OTP - Port adapter present]
+    OTP --> AGENT[Agent / LLM coordination - planned]
+    AGENT --> MODEL[Inference - planned]
+    AGENT --> RET[Retrieval / RAG - planned]
+    RET --> VDB[Vector index - planned]
+    RET --> DOC[Document ACL and provenance - planned]
+    AGENT --> MEM[Tenant-scoped memory - planned]
+    AGENT --> CAP[Identity-scoped MCP tool registry - planned]
+    CAP --> POLICY[Trusted action authorization - C++ baseline]
     AUTH --> POLICY
-    POLICY -->|Denied| DENY[Uniform denial / no data disclosure — C++ baseline]
-    POLICY -->|Allowed preview| PORT[Erlang Port / bounded worker — adapter source present]
-    PORT --> NATIVE[C++20 / CMake deterministic simulator — implemented]
-    NATIVE --> FIX[Immutable synthetic fixtures / no external effects — baseline]
-    NATIVE --> CASES[Offline exposure inventory / role gate — implemented]
-    CASES --> OBS[Structured events, correlation, canaries — planned]
-    GW --> OBS
-    POLICY --> OBS
-    DOC -. untrusted text never grants authority .-> POLICY
-    MEM -. memory never grants authority .-> POLICY
-    MODEL -. model output never grants authority .-> POLICY
-    EXT[External providers / A2A / host systems — not connected] -. no network connection .-> FIX
+    POLICY -->|Deny| DENY[Uniform rejection - local baseline]
+    POLICY -->|Read-only mock preview| PORT[Erlang Port / bounded worker - adapter present]
+    PORT --> NATIVE[C++20 CMake simulator - implemented]
+    NATIVE --> FIX[Immutable synthetic fixtures - implemented]
+    NATIVE --> CASES[Recon and agent policy inventories - implemented]
+    NATIVE --> CHAIN[Cross-zone control model - implemented offline]
+    CHAIN -->|Unsafe transition denied| DENY
+    CHAIN -->|Safe fixture preview| FIX
+    MODEL -. never authorizes actions .-> POLICY
+    RET -. retrieved content is data only .-> POLICY
+    MEM -. memory is data only .-> POLICY
+
+    subgraph ENTERPRISE[Five modeled enterprise trust zones - offline fixtures only]
+        direction LR
+        PUBLIC[Zone 1: Public AI / web / SQL broker]
+        DMZ[Zone 2: DMZ workload / remote gateway]
+        DEV[Zone 3: Development / endpoints / source control]
+        DATA[Zone 4: Databases / shares / RAG / schedulers]
+        ID[Zone 5: Directory / privileged identities]
+        PUBLIC -. risk chain, no connectivity .-> DMZ
+        DMZ -. risk chain, no connectivity .-> DEV
+        DEV -. risk chain, no connectivity .-> DATA
+        DATA -. risk chain, no connectivity .-> ID
+    end
+    PUBLIC -. synthetic control case .-> CHAIN
+    DMZ -. synthetic control case .-> CHAIN
+    DEV -. synthetic control case .-> CHAIN
+    DATA -. synthetic control case .-> CHAIN
+    ID -. synthetic control case .-> CHAIN
+    CHAIN --> EVIDENCE[Offline control report - implemented]
+    EVIDENCE -. future integration .-> OBS[Correlated audit events / traces / alerts - planned]
+    GW -. future integration .-> OBS
+    POLICY -. future integration .-> OBS
+    EXT[Live providers and corporate networks - NOT connected] -. no external effects .-> FIX
 ```
 
 **Trust zones:** the public ingress is untrusted; agent prompts, retrieved documents, web pages, model output, tool results and memory are **data-only**; authority comes from independently authenticated application context. Private tool schemas, backend versions, document names, embedding configuration and debug details require separate exposure controls. Rendered health and error responses must disclose no infrastructure topology. The native C++ CLI is a developer diagnostic, not an MCP or HTTP authorization endpoint.
 
-**Implementation boundary:** `simulator security call` enforces the local native permission preview. `simulator recon inspect` separately exercises synthetic information-disclosure decisions. Neither command accepts real credentials, sends requests or operates on live tenants. The current Elixir adapter does not yet enforce these gates end to end. A future network service MUST bind source, identity, role and approval server-side, not allow clients or models to select them.
+**Implementation boundary:** `simulator security call` enforces the local native permission preview. `simulator recon inspect` separately exercises synthetic information-disclosure decisions. `simulator capstone simulate` evaluates offline risk-chain fixtures and never opens a session, network route or privilege. Neither command accepts real credentials, sends requests or operates on live tenants. The current Elixir adapter does not yet enforce these gates end to end. A future network service MUST bind source, identity, role and approval server-side, not allow clients or models to select them.
 
 ### Boundaries and safety
 
@@ -178,7 +206,7 @@ Policy decisions always mark `simulation_only` and `side_effects:false`. Evaluat
 
 ### Implementation stages
 
-- Gate A: deterministic C++ CLI, security decision tests, guarded mock dispatch and clean Windows build.
+- Gate A: deterministic C++ CLI, security decision tests, guarded mock dispatch, cross-zone risk fixtures and clean Windows build.
 - Gate B: real Elixir Port integration with supervision and restart tests.
 - Gate C: strictly local MCP JSON-RPC tool adapter and protocol conformance suite.
 - Gate D: Phoenix LiveView admin console and scenario editor.
@@ -217,7 +245,7 @@ Use a bounded, isolated **inventory -> synthetic probe -> policy decision -> exp
 - Secret disclosure and network egress are disabled even for privileged local role fixtures.
 - Shared-memory writes need trusted application context, reviewer role and explicit approval, and still remain preview-only.
 - Authorized calls remain constrained by the native tool allowlist, resource validation and `side_effects:false`.
-- Compile and run the eleven CTest targets in supported builds. Windows execution must be confirmed by CI; Erlang Port/Elixir end-to-end evaluation remains pending.
+- Compile and run the sixteen CTest targets in supported builds. Windows execution must be confirmed by CI; Erlang Port/Elixir end-to-end evaluation remains pending.
 
 **Scope limits:** No prompt-injection classifier, multi-agent orchestrator, real OAuth/RBAC implementation, real session storage, HTML parser, Unicode normalization engine, MCP wire adapter, Phoenix app, or production telemetry is included yet. The cases above define the requirements and the testable native authorization baseline, not a finished platform.
 
@@ -253,6 +281,47 @@ The inventory below models externally observable properties and leakage risks ac
 The `role` argument is a developer-controlled test input **only**. A real API cannot permit the caller to self-assert reviewer identity. The same denial response for unknown and protected fixture IDs prevents an existence oracle; inventory descriptions deliberately contain no real service identifiers. Actual logs, honeypots, adaptive detection, rate limiting, model behavior tests and active network discovery are **future work**.
 
 **Evaluation gates:** identical deny response for unknown and unauthorized IDs; no network egress; deterministic output; reviewer-only detailed synthetic summaries; tool discovery and retrieval metadata do not grant actions; telemetry correlation and source redaction must be integrated and tested before any live deployment. Do not use keyword-based monitoring as the only mechanism for preventing unauthorized access.
+
+## Cross-zone risk-chain simulation — offline control model
+
+The enterprise threat model describes **17 independently testable trust-boundary risks**, organized along five synthetic zones: public AI and database mediation, DMZ and remote gateway, development endpoints and source control, internal databases and retrieval, and privileged directory identities. **Every high-risk transition is a denied fixture**, even if a test role is marked as reviewer or the source is `trusted_application`. This is a safety specification for future integration, **not evidence of real-world detection or exploit prevention**.
+
+| Boundary | Risk-class fixture | Required safeguard | Delivery status |
+|---|---|---|---|
+| Public AI to data | Model-generated privileged database operation | Read-only parameterized query service with explicit SQL operation allowlist | Synthetic deny |
+| AI to tools | Model output treated as authority | Application-owned permission checks on every tool call | Synthetic deny |
+| Public workload to DMZ | Inherited backend permissions or unrestricted service egress | Isolated workload identity, deny-by-default egress | Synthetic deny |
+| DMZ to remote access | Inappropriate privileged group membership or broad gateway session | Approved membership changes, role-scoped remote session and audit | Synthetic deny |
+| Developer endpoint | Local privilege or developer token exposure | Endpoint hardening, scoped tokens, protected credential store | Synthetic deny |
+| Database to internal shares | Shared service credentials or unscoped file permissions | Unique service identities, per-principal shares and access auditing | Synthetic deny |
+| Shared automation | Unsigned scripts, module path ambiguity, writable service artifacts | Immutable releases, verified module imports, protected install paths | Synthetic deny |
+| Retrieval to filesystem | Hostile document controls agent behavior or unbounded file reads | Treat retrieval as data; canonical directory allowlist and independent approval | Synthetic deny |
+| Process and directory identity | Secrets in process memory or multi-zone privilege chaining | Secret isolation, tiered administrative identities, least privilege | Synthetic deny |
+| Monitoring across stages | Independent alerts not correlated into an incident | Stable trace/session identifiers, correlation rules and alert review | Synthetic deny; real telemetry planned |
+
+### Local deterministic control demonstrations
+
+```powershell
+# Inventory the 17 modeled trust-boundary risks
+.\out\build\windows-msvc\Release\simulator.exe capstone list
+
+# View a reviewed synthetic control explanation; public roles receive uniform denial
+.\out\build\windows-msvc\Release\simulator.exe capstone assess rag_file_boundary reviewer
+.\out\build\windows-msvc\Release\simulator.exe capstone assess rag_file_boundary viewer
+
+# An unsafe RAG-to-filesystem transition is blocked even with fixture approval
+.\out\build\windows-msvc\Release\simulator.exe capstone simulate rag_file_boundary retrieved_document reviewer same_session approved
+
+# The one positive fixture is an authorized, read-only, offline health preview
+.\out\build\windows-msvc\Release\simulator.exe capstone simulate safe_health_preview trusted_application operator same_session approved
+
+# Report modeled coverage; actual detection rate remains unknown
+.\out\build\windows-msvc\Release\simulator.exe capstone report
+```
+
+**Controls and evidence:** C++ evaluates local fixture roles and sources, not authenticated identities. There are no connection tunnels, payloads, credentials, scans, Windows domain operations, SQL connections or modifications of live systems. Each response explicitly declares `simulation_only`, `network_access:false` and `side_effects:false`. The report exposes `real_attacks_executed:0` and `real_detection_rate:null`, so modeled policy coverage cannot be misrepresented as incident-prevention performance.
+
+**Acceptance gates:** deny all 17 modeled unsafe paths; preserve indistinguishable denial for unknown/unauthorized identifiers; deny untrusted source, cross-session and missing-approval variations; allow only the synthetic positive health fixture; verify every returned record remains read-only; run 16 CTest cases in Debug, Release and Windows CI. Future real integration needs trusted server-issued identities, data-layer ACLs, runtime telemetry, RAG ingestion tests, and independently reviewed adversarial validation.
 
 ## Simulator service and collaboration scope
 
@@ -300,7 +369,7 @@ Proposed synthetic scenarios include `scheduled_maintenance`, `urgent_ticket`, `
 
 ### Metrics
 
-- Tool allowlist coverage and successful negative tests.
+- Tool allowlist coverage, unsafe cross-zone transition denial, and successful negative tests.
 - API contract pass rate and simulation determinism rate.
 - Native crash count under fuzzing; memory sanitizer findings.
 - Median and p95 latency of isolated native calls.

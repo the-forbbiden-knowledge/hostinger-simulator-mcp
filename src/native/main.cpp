@@ -1,6 +1,7 @@
 #include "simulator/simulator.hpp"
 #include "simulator/agent_security.hpp"
 #include "simulator/recon_security.hpp"
+#include "simulator/capstone_security.hpp"
 #include <iostream>
 #include <string_view>
 
@@ -47,6 +48,26 @@ int main(int argc, char** argv) {
     std::cout << simulator::recon_security::inspect(argv[3], argv[4]) << '\n';
     return 0; // denial is an expected synthetic policy outcome
   }
-  std::cerr << "Usage: simulator recon list | simulator recon inspect <scenario_id> <viewer|operator|reviewer> | simulator list | simulator call <tool_name> <resource_id> | simulator security list | simulator security evaluate <source> <action> <role> <session_scope> [none|approved] | simulator security call <source> <role> <scope> <approval> <tool> <resource>\n";
+  if (argc == 3 && std::string_view(argv[1]) == "capstone" &&
+      std::string_view(argv[2]) == "list") {
+    std::cout << simulator::capstone_security::list_scenarios() << '\n';
+    return 0;
+  }
+  if (argc == 3 && std::string_view(argv[1]) == "capstone" &&
+      std::string_view(argv[2]) == "report") {
+    std::cout << simulator::capstone_security::report() << '\n';
+    return 0;
+  }
+  if (argc == 5 && std::string_view(argv[1]) == "capstone" &&
+      std::string_view(argv[2]) == "assess") {
+    std::cout << simulator::capstone_security::assess(argv[3], argv[4]) << '\n';
+    return 0;
+  }
+  if (argc == 8 && std::string_view(argv[1]) == "capstone" &&
+      std::string_view(argv[2]) == "simulate") {
+    std::cout << simulator::capstone_security::simulate(argv[3], argv[4], argv[5], argv[6], argv[7]) << '\n';
+    return 0;
+  }
+  std::cerr << "Usage: simulator capstone list | simulator capstone report | simulator capstone assess <scenario_id> <reviewer> | simulator capstone simulate <scenario_id> <source> <role> <scope> <approval> | simulator recon list | simulator recon inspect <scenario_id> <viewer|operator|reviewer> | simulator list | simulator call <tool_name> <resource_id> | simulator security list | simulator security evaluate <source> <action> <role> <session_scope> [none|approved] | simulator security call <source> <role> <scope> <approval> <tool> <resource>\n";
   return 64;
 }
