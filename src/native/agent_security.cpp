@@ -13,6 +13,51 @@ std::string deny(std::string_view reason) {
   return "{\"ok\":true,\"mode\":\"simulation_only\",\"decision\":\"deny\",\"reason\":\"" +
          simulator::escape_json(reason) + "\",\"side_effects\":false}";
 }
+struct PolicyDecision {
+  bool allowed_preview;
+  std::string_view reason;
+};
+
+// Authorization is a structured decision. Never use presentation JSON as the
+// source of authority for dispatching a native tool.
+PolicyDecision authorize(std::string_view source, std::string_view action,
+                         std::string_view role, std::string_view session_scope,
+                         std::string_view approval) noexcept {
+  if (!one_of(source, {"trusted_application", "user_input", "document", "document_batch",
+                       "web_page", "source_code", "tool_output", "shared_memory",
+                       "private_memory"}) ||
+      !one_of(action, {"read_fixture", "execute_tool", "write_shared_memory",
+                       "read_private_memory", "reveal_secret", "external_egress"}) ||
+      !one_of(role, {"viewer", "operator", "reviewer"}) ||
+      !one_of(session_scope, {"same_session", "cross_session"}) ||
+      !one_of(approval, {"none", "approved"})) {
+    return {false, "invalid_policy_input"};
+  }
+  if (action == "reveal_secret" || action == "external_egress") {
+    return {false, "sensitive_egress_disabled"};
+  }
+  if (session_scope != "same_session") return {false, "session_boundary"};
+  if (action == "read_fixture") return {true, "synthetic_read_only"};
+  if (source != "trusted_application") {
+    return {false, "untrusted_data_cannot_authorize_actions"};
+  }
+  if (action == "write_shared_memory" &&
+      (role != "reviewer" || approval != "approved")) {
+    return {false, "memory_write_requires_review"};
+  }
+  if ((action == "execute_tool" || action == "read_private_memory") &&
+      role == "viewer") return {false, "insufficient_role"};
+  if ((action == "execute_tool" || action == "read_private_memory") &&
+      approval != "approved") return {false, "approval_required"};
+  return {true, "authorized_preview_only"};
+}
+
+std::string serialize(const PolicyDecision& decision) {
+  if (!decision.allowed_preview) return deny(decision.reason);
+  return "{\"ok\":true,\"mode\":\"simulation_only\",\"decision\":\"allow_preview\","
+         "\"reason\":\"" + simulator::escape_json(decision.reason) +
+         "\",\"side_effects\":false}";
+}
 } // namespace
 
 const std::vector<Scenario>& scenarios() {
@@ -50,35 +95,15 @@ std::string list_scenarios() {
 std::string evaluate(std::string_view source, std::string_view action,
                      std::string_view role, std::string_view session_scope,
                      std::string_view approval) {
-  if (!one_of(source, {"trusted_application", "user_input", "document", "document_batch", "web_page",
-                        "source_code", "tool_output", "shared_memory", "private_memory"}) ||
-      !one_of(action, {"read_fixture", "execute_tool", "write_shared_memory", "read_private_memory",
-                       "reveal_secret", "external_egress"}) ||
-      !one_of(role, {"viewer", "operator", "reviewer"}) ||
-      !one_of(session_scope, {"same_session", "cross_session"}) ||
-      !one_of(approval, {"none", "approved"})) {
-    return deny("invalid_policy_input");
-  }
-  if (action == "reveal_secret" || action == "external_egress") return deny("sensitive_egress_disabled");
-  if (session_scope != "same_session") return deny("session_boundary");
-  if (action == "read_fixture") {
-    return "{\"ok\":true,\"mode\":\"simulation_only\",\"decision\":\"allow_preview\",\"reason\":\"synthetic_read_only\",\"side_effects\":false}";
-  }
-  if (source != "trusted_application") return deny("untrusted_data_cannot_authorize_actions");
-  if (action == "write_shared_memory" && (role != "reviewer" || approval != "approved")) {
-    return deny("memory_write_requires_review");
-  }
-  if ((action == "execute_tool" || action == "read_private_memory") && role == "viewer") {
-    return deny("insufficient_role");
-  }
-  if ((action == "execute_tool" || action == "read_private_memory") && approval != "approved") return deny("approval_required");
-  return "{\"ok\":true,\"mode\":\"simulation_only\",\"decision\":\"allow_preview\",\"reason\":\"authorized_preview_only\",\"side_effects\":false}";
+  return serialize(authorize(source, action, role, session_scope, approval));
 }
+
 std::string guarded_call(std::string_view source, std::string_view role,
                          std::string_view session_scope, std::string_view approval,
                          std::string_view tool, std::string_view resource) {
-  const auto policy = evaluate(source, "execute_tool", role, session_scope, approval);
-  if (policy.find("\"decision\":\"allow_preview\"") == std::string::npos) return policy;
+  const PolicyDecision decision =
+      authorize(source, "execute_tool", role, session_scope, approval);
+  if (!decision.allowed_preview) return serialize(decision);
   return simulator::call_tool(tool, resource);
 }
 } // namespace simulator::agent_security

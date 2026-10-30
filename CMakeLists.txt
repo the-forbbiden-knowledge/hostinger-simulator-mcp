@@ -190,3 +190,8 @@ add_executable(resource_boundary_tests tests/resource_boundary_tests.cpp)
 target_link_libraries(resource_boundary_tests PRIVATE simulator_core)
 add_test(NAME native_resource_boundary COMMAND resource_boundary_tests)
 set_tests_properties(native_resource_boundary PROPERTIES TIMEOUT 20)
+# The policy decision must be typed; every route is independently gated.
+add_executable(agent_complete_mediation_tests tests/agent_complete_mediation_tests.cpp)
+target_link_libraries(agent_complete_mediation_tests PRIVATE simulator_core)
+add_test(NAME native_agent_complete_mediation COMMAND agent_complete_mediation_tests)
+set_tests_properties(native_agent_complete_mediation PROPERTIES TIMEOUT 20)

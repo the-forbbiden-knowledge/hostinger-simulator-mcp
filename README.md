@@ -957,6 +957,12 @@ The native adapter now uses a fixed **5-second monotonic deadline** for the enti
 
 A dedicated Linux CI job compiles the native executable and runs ExUnit against the actual C++ process. It exercises successful and unsuccessful exit statuses, oversized output, repeated partial output that must not extend the deadline, and a real local native tool call. These are **integration tests** of a local preview boundary; they do not prove production fault tolerance, termination of every descendant process, or a service-level objective.
 
+## Typed native agent authorization and complete mediation
+
+The offline agent preview now uses a **structured internal policy decision** before dispatching into the 17-tool native fixture registry. It no longer infers authorization by searching a serialized JSON response for a substring. The publicly visible `allow_preview` / `deny` response contract is retained; no live service calls or authorization tokens have been added.
+
+The `native_agent_complete_mediation` test exercises all **1,836 source × role × session × approval × tool combinations**, plus malformed fixture resource selectors and unknown tool names. The default is deny; only an explicitly approved same-session operator/reviewer request from the `trusted_application` fixture source reaches the **still-independent** native tool and resource allowlists. This is a regression for the synthetic trust-boundary contract, **not** external authentication or proof of authorization from a real user.
+
 ## Elixir/native boundary input parity
 
 The Erlang Port adapter validates fixture-only resource identifiers using the same finite ASCII syntax and 256-byte limit as the native C++ entry point. Leading/trailing dots, consecutive dots, path separators, control bytes and invalid Unicode are denied **before** creating a native process. Tool names must also have a bounded lowercase identifier grammar, while the C++ tool registry remains the authoritative allowlist. The native validator independently enforces the resource contract again.
