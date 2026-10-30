@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library(simulator_core STATIC src/native/simulator.cpp src/native/agent_security.cpp src/native/recon_security.cpp src/native/capstone_security.cpp src/native/supplychain_security.cpp)
+add_library(simulator_core STATIC src/native/simulator.cpp src/native/agent_security.cpp src/native/recon_security.cpp src/native/capstone_security.cpp src/native/supplychain_security.cpp src/native/vector_security.cpp)
 target_include_directories(simulator_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(MSVC)
@@ -54,3 +54,13 @@ add_test(NAME supplychain_negative COMMAND simulator supplychain simulate depend
 add_test(NAME supplychain_positive_fixture COMMAND simulator supplychain baseline reviewer)
 add_test(NAME supplychain_uniform_denial COMMAND simulator supplychain assess dependency_confusion viewer)
 add_test(NAME supplychain_report COMMAND simulator supplychain report)
+
+add_executable(vector_security_tests tests/vector_security_tests.cpp)
+target_link_libraries(vector_security_tests PRIVATE simulator_core)
+add_test(NAME vector_policy_unit COMMAND vector_security_tests)
+add_test(NAME vector_inventory COMMAND simulator vector list)
+add_test(NAME vector_report COMMAND simulator vector report)
+add_test(NAME vector_negative COMMAND simulator vector simulate candidate_membership_probe reviewer)
+add_test(NAME vector_positive_fixture COMMAND simulator vector baseline reviewer)
+add_test(NAME vector_safe_query COMMAND simulator vector query operator same_tenant public search redacted_summary)
+add_test(NAME vector_cross_tenant_denied COMMAND simulator vector query reviewer other_tenant public search redacted_summary)

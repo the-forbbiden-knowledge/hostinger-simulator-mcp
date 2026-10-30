@@ -19,6 +19,7 @@ All operations are local mock previews. **No cloud accounts, DNS zones, virtual 
 - **Exposure assessment (synthetic):** 20 offline reconnaissance surfaces across model, retrieval, MCP tool discovery, gateway, orchestration and monitoring; role-gated reports with uniform denials and no network probes.
 - **Cross-zone resilience model (synthetic):** 17 modeled multi-stage trust-boundary risks across public application, DMZ, gateway, development, database, file services, retrieval and identity. Every unsafe transition is denied as a local policy fixture; one read-only health preview provides a positive control.
 - **AI component intake (synthetic):** 26 supply-chain risk fixtures spanning MCP server releases, dependency resolution, unsafe deserialization, model weights, datasets, adapters, tokenizers, build infrastructure, hardware and third parties. The fail-closed C++ policy evaluates *simulated* evidence. No real artifact is loaded, scanned, hashed or cryptographically verified.
+- **Embedding privacy (synthetic):** 22 vector retrieval, inversion-exposure and tenant-isolation risk fixtures; no real embedding model, vector database or retrieval API is connected.
 - **Testing:** CTest + ExUnit; dependency scanning, fuzzing, static analysis, reproducibility tests and observability are delivery gates.
 
 ## Repository layout
@@ -29,7 +30,7 @@ project/
   CMakePresets.json           Windows configuration presets
   include/simulator/          Native public interfaces
   src/native/                 Native simulator, policy engine and CLI
-  tests/                      Native, policy, exposure, cross-zone and supply-chain tests
+  tests/                      Native, agent, exposure, cross-zone, supply-chain and vector tests
   elixir/                     Minimal Mix application with Port wrapper
   .github/workflows/          Windows build/test CI
 ```
@@ -56,6 +57,11 @@ ctest --preset windows-msvc -C Release --output-on-failure
 .\out\build\windows-msvc\Release\simulator.exe supplychain report
 .\out\build\windows-msvc\Release\simulator.exe supplychain simulate dependency_confusion reviewer
 .\out\build\windows-msvc\Release\simulator.exe supplychain baseline reviewer
+.\out\build\windows-msvc\Release\simulator.exe vector list
+.\out\build\windows-msvc\Release\simulator.exe vector report
+.\out\build\windows-msvc\Release\simulator.exe vector simulate candidate_membership_probe reviewer
+.\out\build\windows-msvc\Release\simulator.exe vector query operator same_tenant public search redacted_summary
+.\out\build\windows-msvc\Release\simulator.exe vector query reviewer other_tenant public search redacted_summary
 .\out\build\windows-msvc\Release\simulator.exe capstone report
 .\out\build\windows-msvc\Release\simulator.exe capstone assess rag_file_boundary reviewer
 .\out\build\windows-msvc\Release\simulator.exe capstone simulate rag_file_boundary retrieved_document reviewer same_session approved
@@ -106,7 +112,7 @@ Architecture, service scenarios, the engineering technique matrix and delivery g
 
 ### Complete layered architecture and trust boundaries
 
-The following is the **target architecture**, not an assertion that every service exists yet. Solid flow lines represent designed data paths. The compiled baseline is the local C++ simulator, native authorization gate, offline security-case inventory and offline cross-zone control model and supply-chain intake fixtures; all network ingress, real retrieval, inference, durable memory and interactive UI components remain planned.
+The following is the **target architecture**, not an assertion that every service exists yet. Solid flow lines represent designed data paths. The compiled baseline is the local C++ simulator, native authorization gate, offline security-case inventory and offline cross-zone control model, supply-chain intake fixtures and vector privacy fixtures; all network ingress, real vector search, embedding creation, inference, durable memory and interactive UI components remain planned.
 
 ```mermaid
 flowchart TD
@@ -119,8 +125,18 @@ flowchart TD
     OTP --> AGENT[Agent / LLM coordination - planned]
     AGENT --> MODEL[Inference - planned]
     AGENT --> RET[Retrieval / RAG - planned]
-    RET --> VDB[Vector index - planned]
-    RET --> DOC[Document ACL and provenance - planned]
+    RET --> RGATE[Server-side RAG retrieval gate - planned]
+    RGATE --> VSEC[Vector privacy control fixtures - implemented offline]
+    RGATE --> DOC[Document-level ACL and provenance - planned]
+    RGATE --> VDB[Tenant-partitioned vector index - planned]
+    VDB --> VECT[Encrypted embeddings / metadata - planned]
+    VSEC -->|Cross-tenant or raw vectors or probing: deny| DENY
+    VSEC -->|Read-only redacted fixture preview| FIX
+    SRC[Approved document sources - planned] --> MIN[Secret/PII minimization - planned]
+    MIN --> CHUNK[Chunking and provenance tagging - planned]
+    CHUNK --> EMBED[Pinned embedding model - planned]
+    EMBED --> VDB
+    DOC -. future pre-ranking ACL filter .-> RGATE
     AGENT --> MEM[Tenant-scoped memory - planned]
     AGENT --> CAP[Identity-scoped MCP tool registry - planned]
     CAP --> POLICY[Trusted action authorization - C++ baseline]
@@ -132,12 +148,15 @@ flowchart TD
     NATIVE --> CASES[Recon and agent policy inventories - implemented]
     NATIVE --> CHAIN[Cross-zone control model - implemented offline]
     NATIVE --> SCFIX[Supply-chain intake gate - implemented offline]
+    NATIVE --> VSEC
     CHAIN -->|Unsafe transition denied| DENY
     SCFIX -->|Untrusted artifact fixture denied| DENY
     SCFIX -->|Reviewed fixture preview only| FIX
     CHAIN -->|Safe fixture preview| FIX
     MODEL -. never authorizes actions .-> POLICY
     RET -. retrieved content is data only .-> POLICY
+    VDB -. vectors are sensitive data, not authorization .-> POLICY
+    AUTH -. future trusted role and tenant binding .-> RGATE
     MEM -. memory is data only .-> POLICY
 
     subgraph ENTERPRISE[Five modeled enterprise trust zones - offline fixtures only]
@@ -175,17 +194,19 @@ flowchart TD
     VENDORS -. synthetic provider review .-> SCFIX
     SCFIX -. future verified import gate .-> CAP
     SCFIX -. future verified import gate .-> RET
+    SCFIX -. future verified import gate .-> EMBED
     SCFIX -. future verified import gate .-> MODEL
     SCFIX -. future verified import gate .-> PORT
     EVIDENCE -. future integration .-> OBS[Correlated audit events / traces / alerts - planned]
     GW -. future integration .-> OBS
     POLICY -. future integration .-> OBS
+    VSEC -. future audit / vector query telemetry .-> OBS
     EXT[Live providers and corporate networks - NOT connected] -. no external effects .-> FIX
 ```
 
-**Trust zones:** the public ingress is untrusted; agent prompts, retrieved documents, web pages, model output, tool results and memory are **data-only**; authority comes from independently authenticated application context. Private tool schemas, backend versions, document names, embedding configuration and debug details require separate exposure controls. Rendered health and error responses must disclose no infrastructure topology. The native C++ CLI is a developer diagnostic, not an MCP or HTTP authorization endpoint. The supply-chain section depicts proposed intake paths, **not trusted links already implemented between registries and running components**.
+**Trust zones:** the public ingress is untrusted; agent prompts, retrieved documents, web pages, model output, tool results and memory are **data-only**; authority comes from independently authenticated application context. Private tool schemas, backend versions, document names, embedding configuration and debug details require separate exposure controls. Rendered health and error responses must disclose no infrastructure topology. The native C++ CLI is a developer diagnostic, not an MCP or HTTP authorization endpoint. The supply-chain section depicts proposed intake paths, **not trusted links already implemented between registries and running components**. Embeddings are semantically informative representations and must never be treated as one-way hashes or inherently anonymized data.
 
-**Implementation boundary:** `simulator security call` enforces the local native permission preview. `simulator recon inspect` separately exercises synthetic information-disclosure decisions. `simulator capstone simulate` evaluates offline risk-chain fixtures and never opens a session, network route or privilege. `simulator supplychain` checks metadata-only local fixtures, not actual signatures, SBOMs, hashes or models. Neither command accepts real credentials, sends requests or operates on live tenants. The current Elixir adapter does not yet enforce these gates end to end. A future network service MUST bind source, identity, role and approval server-side, not allow clients or models to select them.
+**Implementation boundary:** `simulator security call` enforces the local native permission preview. `simulator recon inspect` separately exercises synthetic information-disclosure decisions. `simulator capstone simulate` evaluates offline risk-chain fixtures and never opens a session, network route or privilege. `simulator supplychain` checks metadata-only local fixtures, not actual signatures, SBOMs, hashes or models. `simulator vector` checks synthetic retrieval-policy metadata without computing embeddings, connecting to a vector database, running an inversion model or exporting data. Neither command accepts real credentials, sends requests or operates on live tenants. The current Elixir adapter does not yet enforce these gates end to end. A future network service MUST bind source, identity, role and approval server-side, not allow clients or models to select them.
 
 ### Boundaries and safety
 
@@ -272,7 +293,7 @@ Use a bounded, isolated **inventory -> synthetic probe -> policy decision -> exp
 - Secret disclosure and network egress are disabled even for privileged local role fixtures.
 - Shared-memory writes need trusted application context, reviewer role and explicit approval, and still remain preview-only.
 - Authorized calls remain constrained by the native tool allowlist, resource validation and `side_effects:false`.
-- Compile and run the 22 CTest targets in supported builds. Windows execution must be confirmed by CI for this commit; Erlang Port/Elixir end-to-end evaluation remains pending.
+- Compile and run the 29 CTest targets in supported builds. Windows execution must be confirmed by CI for this commit; Erlang Port/Elixir end-to-end evaluation remains pending.
 
 **Scope limits:** No prompt-injection classifier, multi-agent orchestrator, real OAuth/RBAC implementation, real session storage, HTML parser, Unicode normalization engine, MCP wire adapter, Phoenix app, or production telemetry is included yet. The cases above define the requirements and the testable native authorization baseline, not a finished platform.
 
@@ -348,11 +369,11 @@ The enterprise threat model describes **17 independently testable trust-boundary
 
 **Controls and evidence:** C++ evaluates local fixture roles and sources, not authenticated identities. There are no connection tunnels, payloads, credentials, scans, Windows domain operations, SQL connections or modifications of live systems. Each response explicitly declares `simulation_only`, `network_access:false` and `side_effects:false`. The report exposes `real_attacks_executed:0` and `real_detection_rate:null`, so modeled policy coverage cannot be misrepresented as incident-prevention performance.
 
-**Acceptance gates:** deny all 17 modeled unsafe paths; preserve indistinguishable denial for unknown/unauthorized identifiers; deny untrusted source, cross-session and missing-approval variations; allow only the synthetic positive health fixture; verify every returned record remains read-only; run 22 CTest cases in Debug, Release and Windows CI. Future real integration needs trusted server-issued identities, data-layer ACLs, runtime telemetry, RAG ingestion tests, and independently reviewed adversarial validation.
+**Acceptance gates:** deny all 17 modeled unsafe paths; preserve indistinguishable denial for unknown/unauthorized identifiers; deny untrusted source, cross-session and missing-approval variations; allow only the synthetic positive health fixture; verify every returned record remains read-only; run 29 CTest cases in Debug, Release and Windows CI. Future real integration needs trusted server-issued identities, data-layer ACLs, runtime telemetry, RAG ingestion tests, and independently reviewed adversarial validation.
 
 ## AI/ML supply-chain integrity — offline synthetic controls
 
-The intake model covers **26 negative cases** across six component families: training data, models, software (including MCP servers), infrastructure, hardware, and third-party services. Dataset/adapter/tokenizer concerns are tracked separately. No external dependency, model, Python pickle, package index, registry, repository or customer service is contacted or executed. The total inventory is **77 distinct synthetic risk cases** (14 agent + 20 exposure + 17 cross-zone + 26 supply chain), not 77 vulnerabilities discovered.
+The intake model covers **26 negative cases** across six component families: training data, models, software (including MCP servers), infrastructure, hardware, and third-party services. Dataset/adapter/tokenizer concerns are tracked separately. No external dependency, model, Python pickle, package index, registry, repository or customer service is contacted or executed. The full inventory is **99 distinct synthetic risk cases** (14 agent + 20 exposure + 17 cross-zone + 26 supply chain + 22 vector privacy), not 99 vulnerabilities discovered.
 
 ### Supply-chain control gates
 
@@ -377,10 +398,51 @@ The intake model covers **26 negative cases** across six component families: tra
 
 # Positive metadata-only test fixture; NOT a real trusted model
 .\out\build\windows-msvc\Release\simulator.exe supplychain baseline reviewer
+.\out\build\windows-msvc\Release\simulator.exe vector list
+.\out\build\windows-msvc\Release\simulator.exe vector report
+.\out\build\windows-msvc\Release\simulator.exe vector simulate candidate_membership_probe reviewer
+.\out\build\windows-msvc\Release\simulator.exe vector query operator same_tenant public search redacted_summary
+.\out\build\windows-msvc\Release\simulator.exe vector query reviewer other_tenant public search redacted_summary
 .\out\build\windows-msvc\Release\simulator.exe supplychain report
 ```
 
-**Acceptance:** all 26 negative cases reject a mismatched gate; unrecognized assets and unauthorized roles receive uniform denial; a known-good *metadata fixture* passes; all responses remain local with `network_access:false` and `side_effects:false`; release CI passes 22 CTest targets. Real acceptance requires independently computed SHA-256, signature and provenance checks, license policy, generation of actual SBOM/AI-BOM, controlled registry resolution, file-format sandboxing, model behavior tests, reviewer identity and operational audit trails.
+**Acceptance:** all 26 negative cases reject a mismatched gate; unrecognized assets and unauthorized roles receive uniform denial; a known-good *metadata fixture* passes; all responses remain local with `network_access:false` and `side_effects:false`; release CI passes 29 CTest targets. Real acceptance requires independently computed SHA-256, signature and provenance checks, license policy, generation of actual SBOM/AI-BOM, controlled registry resolution, file-format sandboxing, model behavior tests, reviewer identity and operational audit trails.
+
+## Vector / embedding privacy — offline synthetic controls
+
+The embedding boundary models **22 negative cases** across raw-vector exposure, membership inference, attribute inference, text reconstruction, model metadata disclosure, bulk similarity searches, index poisoning, cross-tenant isolation and audit gaps. These are **synthetic policy fixtures**, not credential recovery tools, vector-database scanners or proof that a real RAG system is secure. Embeddings preserve semantic information and should be protected as sensitive derived data; redacting an LLM answer alone does not guarantee that stored vector representations are safe.
+
+### Privacy and retrieval gates
+
+| Risk / surface | Required future production control | What is implemented now |
+|---|---|---|
+| Embedding exports and reconstruction | Disable raw-vector/raw-chunk exports; encrypt, isolate and minimize embeddings | Deterministic deny decisions for exports and reconstruction risk fixtures |
+| Membership and attribute inference | Query budget, anomaly detection, consistent response, protected sensitive attributes | Repeated-probe and suspicious-query policy fixture failures |
+| Vector database and model disclosure | Network isolation, authentication, private model/index metadata | Synthetic model-revision and metadata policy checks |
+| Cross-tenant/session retrieval | Server-supplied principal, tenant, session and document-level ACL before similarity search | Offline tenant/session/role denial rules only |
+| Ingestion and index tampering | Secret minimization, immutable provenance, reviewed writes, signed/pinned model | Synthetic ingestion and approval gates |
+| Result assembly | Return only source-authorized redacted summaries, cap top-k, audit access | Read-only mock preview and configured top-k/query-budget checks |
+
+**Important:** `simulator vector query` is a developer-only fixture command. It accepts role and tenant labels to test the decision function, **not** to authenticate a real user. A future API MUST ignore requester-supplied authorization labels, derive trusted identity server-side, apply pre-retrieval ACL filtering, record real events, and validate model/vector access independently. This module contains no embedding encoder, decoder, membership oracle, model fingerprinting probe, live database, network client or export path.
+
+```powershell
+# Inventory the 22 synthetic vector/embedding privacy risks
+.\out\build\windows-msvc\Release\simulator.exe vector list
+.\out\build\windows-msvc\Release\simulator.exe vector assess candidate_membership_probe reviewer
+.\out\build\windows-msvc\Release\simulator.exe vector simulate candidate_membership_probe reviewer
+
+# Approved mock response: synthetic redacted summary, never a raw chunk or vector
+.\out\build\windows-msvc\Release\simulator.exe vector baseline reviewer
+.\out\build\windows-msvc\Release\simulator.exe vector query operator same_tenant public search redacted_summary
+
+# Expected uniform denial: other tenant, restricted data or raw-vector request
+.\out\build\windows-msvc\Release\simulator.exe vector query reviewer other_tenant public search redacted_summary
+.\out\build\windows-msvc\Release\simulator.exe vector query operator same_tenant internal search redacted_summary
+.\out\build\windows-msvc\Release\simulator.exe vector query reviewer same_tenant public export raw_vector
+.\out\build\windows-msvc\Release\simulator.exe vector report
+```
+
+**Acceptance for the offline module:** 22/22 negative case fixtures are denied by their expected gate; unexpected IDs and unauthorized roles return the same denial; positive fixtures contain no raw vector/chunk bytes; safe mock preview requires matched scope and a redacted result kind; 29 CTest targets pass on a supported build. **Not yet validated:** independent cryptographic access evidence, actual vector database permission enforcement, inversion-resistance, rate-limit enforcement, sensitive-data sanitization, real audit logging, Elixir/Phoenix end-to-end binding and MCP protocol conformance.
 
 ## Simulator service and collaboration scope
 
@@ -424,7 +486,8 @@ Proposed synthetic scenarios include `scheduled_maintenance`, `urgent_ticket`, `
 | Delivery | requirements, risk review, acceptance gates, tracked metrics | release checklist | planned |
 | Data hygiene | redaction, retention controls, immutable synthetic fixtures | static checks | guideline |
 | Simulation | deterministic fixtures, no external effects, explicit mock markers | side-effect assertions | implemented baseline |
-| AI exposure mapping | gateway, tool schemas, RAG sources, inference metadata and logging surfaces | role-gated synthetic recon inventory; 22 CTest targets total | 20 offline fixtures implemented; live integrations planned |
+| AI exposure mapping | gateway, tool schemas, RAG sources, inference metadata and logging surfaces | role-gated synthetic recon inventory; 29 CTest targets total | 20 offline fixtures implemented; live integrations planned |
+| Vector / embedding privacy | tenant ACL before retrieval, raw-vector export denial, result redaction, probe budgets, pinned model metadata, audit | CTest negative + positive fixtures (22 cases), uniform denial; real vector DB tests pending | Offline C++ gate; real embeddings/RAG planned |
 
 ### Metrics
 
@@ -434,6 +497,7 @@ Proposed synthetic scenarios include `scheduled_maintenance`, `urgent_ticket`, `
 - Median and p95 latency of isolated native calls.
 - OTP worker recovery time after induced failure.
 - Windows build/test success rate and dependency vulnerabilities.
+- Vector privacy gate denial coverage (22/22 expected), tenant/session cross-access denial, raw-vector export denials, top-k and query-budget policy checks; real inversion resistance and privacy leakage rates not measured.
 - Synthetic supply-chain gate denial coverage (26/26 expected), trusted metadata fixture positive control, unauthorized introspection parity, and real artifact integrity verification coverage (currently zero).
 - Information-disclosure negative-test coverage, uniform-denial pass rate, synthetic exposure fixture completeness, and unauthorized tool-schema leakage (target: zero).
 - Availability simulation error against synthetic target SLO.
@@ -443,7 +507,7 @@ All performance and reliability claims must come from measured executions, not a
 
 ## Delivery criteria and release gates
 
-1. Windows x64 Visual Studio 2022/CMake configure, build, CTest green (22 targets including native policy, exposure, cross-zone and supply-chain fixtures).
+1. Windows x64 Visual Studio 2022/CMake configure, build, CTest green (29 targets including native policy, exposure, cross-zone, supply-chain and vector privacy fixtures).
 2. Inputs/outputs (including offline reconnaissance fixture inventory) match documented deterministic fixtures across 100 consecutive runs.
 3. Native unknown-tool, malformed-input, oversized-input, untrusted tool-origin, unauthorized write/egress and cross-session policy tests fail closed.
 4. No network effects, secrets or customer information in committed artifacts.
@@ -456,11 +520,11 @@ All performance and reliability claims must come from measured executions, not a
 
 ### Project status as of bootstrap
 
-- Gate 1: Windows 2022 GitHub Actions passed for previous commits; current commit requires its own CI run.
+- Gate 1: This revision passed local Debug and Release CTest; Windows 2022 GitHub Actions requires a fresh green run for this commit.
 - Gate 2: not run at scale.
 - Gate 3: native runtime checks and negative agent-policy tests included; complete security coverage and real agent injection resistance not claimed.
 - Gate 4: repository content screened for private reference files; this is not a formal secret-scanning attestation.
-- Gates 5-9: future work. The current supply-chain engine is only a metadata fixture model, not automated verification of genuine external dependencies.
+- Gates 5-9: future work. The supply-chain and vector privacy engines are metadata fixtures, not automated verification of genuine external dependencies, embeddings or vector search authorization.
 - Gate 10: private manifests generated in companion library.
 
 
