@@ -28,6 +28,13 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s tests -p 'test_recovery_rehearsal.py' -v
           python3 tools/recovery_rehearsal.py --simulator "$SIMULATOR_NATIVE_EXE"
+      - name: Verify synthetic native telemetry and negative contracts
+        env:
+          SIMULATOR_NATIVE_EXE: ${{ github.workspace }}/out/build/portable/simulator
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -p 'test_preview_telemetry.py' -v
+          python3 tools/preview_telemetry.py --simulator "$SIMULATOR_NATIVE_EXE" --rounds 3
       - name: Exercise Elixir Port with real native executable
         working-directory: elixir
         env:

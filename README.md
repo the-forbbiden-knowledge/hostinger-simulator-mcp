@@ -865,6 +865,19 @@ The fixture lifecycle is: **mission and authorized scope → evidence / hypothes
 **Release gates:** 24/24 synthetic failure fixtures must deny at the intended gate; unauthorized and unknown selectors receive opaque responses; approved decisions are read-only and carry `network_access:false` and `side_effects:false`; unverified financial impact remains JSON `null`; 107 CTest targets pass both locally and in Windows CI for the exact published commit. Pending: live AI evaluations, real authentication, multi-party policy and responsible-AI review, consistent trace correlation, incident handling, and measurable operational impact.
 
 
+## Offline observability and contract regression gate
+
+The cross-platform pipelines now run a native regression telemetry probe against the **built local executable**, not a recorded fixture. It inventories the 17 preview tools, performs three rounds of invocation (**51 accepted previews**), and separately checks **four expected denials**. Each result is JSON-validated for the correct tool, domain, synthetic resource and zero external side effects.
+
+The machine-readable summary includes a gate decision, total successful previews, unexpected failure count and **p50/p95/maximum latency in milliseconds**. Input corruption, mismatched tool identity, output exceeding 64 KiB, unexpected exit status, malformed JSON, missing inventory and unauthorized action claims cause the gate to fail. Ten Python fault-injection unit tests verify the rejection paths and prevent the output from including raw responses or local executable paths.
+
+**Scope:** these are release-regression measurements of a synthetic, short-lived executable on CI workers; they are not production service-level indicators, monitored uptime, a customer-facing SLO, or an incident alerting system. The event explicitly reports `production_slo_measured: false` and `availability_claim: false`. The per-process deadline is 5 seconds and the bounded JSON summary does not publish payloads or credentials.
+
+~~~powershell
+python -m unittest discover -s tests -p test_preview_telemetry.py -v
+python tools/preview_telemetry.py --simulator .\out\build\windows-msvc\Release\simulator.exe --rounds 3
+~~~
+
 ## Disposable recovery-integrity rehearsal
 
 A local-only Python 3 rehearsal exercises the **actual native monitoring preview** with no network or provider operations. The rehearsal captures a bounded synthetic JSON response, writes a temporary checkpoint and SHA-256 manifest, corrupts a temporary working fixture, verifies the checkpoint **before** recovery, and confirms the restored bytes against the expected hash.
