@@ -9,6 +9,12 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Guard public source snapshot
+        run: |
+          python -m unittest discover -s tests -p "test_publication_guard.py" -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python tools/publication_guard.py --root .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Configure
         run: cmake --preset windows-msvc
       - name: Build

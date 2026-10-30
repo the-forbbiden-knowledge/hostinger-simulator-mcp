@@ -865,6 +865,19 @@ The fixture lifecycle is: **mission and authorized scope → evidence / hypothes
 **Release gates:** 24/24 synthetic failure fixtures must deny at the intended gate; unauthorized and unknown selectors receive opaque responses; approved decisions are read-only and carry `network_access:false` and `side_effects:false`; unverified financial impact remains JSON `null`; 107 CTest targets pass both locally and in Windows CI for the exact published commit. Pending: live AI evaluations, real authentication, multi-party policy and responsible-AI review, consistent trace correlation, incident handling, and measurable operational impact.
 
 
+## Source snapshot guard — CI gate
+
+Both Windows and Linux workflows now run a read-only, stdlib-only source inspection **before build**. The policy checks every Git-tracked file in the checkout for prohibited private document/archive/key formats, sensitive library and customer-data directories, symlinks requiring manual review, unusual oversized files and selected high-confidence credential signatures. Its JSON report includes **hashed path identifiers and risk categories only**; it never prints candidate secret values or original private filenames.
+
+Twelve synthetic negative/positive tests validate the gate. The gate rejects nonconforming snapshots, but it is not proof of ownership, complete license clearance, comprehensive secret scanning, or branch policy enforcement. CI runs **after a push**; it cannot undo disclosure if someone already committed private content to a public branch. Developers must screen changes before committing, and administrators should require the checks for merge protection.
+
+Run before any local commit:
+
+~~~powershell
+python -m unittest discover -s tests -p test_publication_guard.py -v
+python tools/publication_guard.py --root .
+~~~
+
 ## Bounded subprocess-tree regression
 
 The existing offline output collector now launches native preview subprocesses in their own process group (POSIX) or Windows process group and stops ordinary child processes on overflow or timeout. POSIX uses group-directed termination; Windows uses a scoped descendant-tree termination command with direct-process fallback. The caller's process group is never signaled.
