@@ -20,11 +20,10 @@ All operations are local mock previews. **No cloud accounts, DNS zones, virtual 
 - **Cross-zone resilience model (synthetic):** 17 modeled multi-stage trust-boundary risks across public application, DMZ, gateway, development, database, file services, retrieval and identity. Every unsafe transition is denied as a local policy fixture; one read-only health preview provides a positive control.
 - **AI component intake (synthetic):** 26 supply-chain risk fixtures spanning MCP server releases, dependency resolution, unsafe deserialization, model weights, datasets, adapters, tokenizers, build infrastructure, hardware and third parties. The fail-closed C++ policy evaluates *simulated* evidence. No real artifact is loaded, scanned, hashed or cryptographically verified.
 - **Embedding privacy (synthetic):** 22 vector retrieval, inversion-exposure and tenant-isolation risk fixtures; no real embedding model, vector database or retrieval API is connected.
-- **Multi-agent / A2A safety (synthetic):** 24 offline agent discovery, trust, delegation, task integrity and output-safety fixtures; no real Agent Card lookup, A2A transport, cryptographic verification, DNS resolution or network agent connection is implemented. **145 total synthetic cases** are currently inventoried, not proven vulnerabilities.
-- **Testing:** CTest + ExUnit; dependency scanning, fuzzing, static analysis, reproducibility tests and observability are delivery gates.
-
+- **Multi-agent / A2A safety (synthetic):** 24 offline agent discovery, trust, delegation, task integrity and output-safety fixtures; no real Agent Card lookup, A2A transport, cryptographic verification, DNS resolution or network agent connection is implemented. **173 total synthetic cases** are currently inventoried, not proven vulnerabilities.
 - **Infrastructure hardening (synthetic):** 28 offline cloud IAM, Kubernetes, image, runtime, GPU and network safety cases; 26 fail-closed metadata gates. Not a live cloud security scanner or Kubernetes policy engine.
 - **Living threat model (synthetic):** 22 offline hypotheses, rules-of-engagement, trust-zone, evidence and go/hold/no-go cases; deterministic assumption lifecycle and a synthetic decision brief. This is not reconnaissance of real targets, a live risk engine, or external attack execution.
+- **Testing:** CTest present and 54 native targets validated locally; Elixir ExUnit remains untested here. Dependency scanning, fuzzing, static analysis, reproducibility tests and observability are delivery gates.
 
 ## Repository layout
 
@@ -483,7 +482,7 @@ The enterprise threat model describes **17 independently testable trust-boundary
 
 **Controls and evidence:** C++ evaluates local fixture roles and sources, not authenticated identities. There are no connection tunnels, payloads, credentials, scans, Windows domain operations, SQL connections or modifications of live systems. Each response explicitly declares `simulation_only`, `network_access:false` and `side_effects:false`. The report exposes `real_attacks_executed:0` and `real_detection_rate:null`, so modeled policy coverage cannot be misrepresented as incident-prevention performance.
 
-**Acceptance gates:** deny all 17 modeled unsafe paths; preserve indistinguishable denial for unknown/unauthorized identifiers; deny untrusted source, cross-session and missing-approval variations; allow only the synthetic positive health fixture; verify every returned record remains read-only; run 29 CTest cases in Debug, Release and Windows CI. Future real integration needs trusted server-issued identities, data-layer ACLs, runtime telemetry, RAG ingestion tests, and independently reviewed adversarial validation.
+**Acceptance gates:** deny all 17 modeled unsafe paths; preserve indistinguishable denial for unknown/unauthorized identifiers; deny untrusted source, cross-session and missing-approval variations; allow only the synthetic positive health fixture; verify every returned record remains read-only; run the 54-target CTest suite in Debug, Release and Windows CI. Future real integration needs trusted server-issued identities, data-layer ACLs, runtime telemetry, RAG ingestion tests, and independently reviewed adversarial validation.
 
 ## AI/ML supply-chain integrity — offline synthetic controls
 
@@ -738,7 +737,7 @@ All performance and reliability claims must come from measured executions, not a
 
 ## Delivery criteria and release gates
 
-1. Windows x64 Visual Studio 2022/CMake configure, build, CTest green (54 targets including native policy, exposure, cross-zone, supply-chain, vector privacy multi-agent/A2A, threat modeling and infrastructure hardening fixtures).
+1. Windows x64 Visual Studio 2022/CMake configure, build, CTest green (54 targets including native policy, exposure, cross-zone, supply-chain, vector privacy, multi-agent/A2A, threat modeling and infrastructure hardening fixtures).
 2. Inputs/outputs (including offline reconnaissance fixture inventory) match documented deterministic fixtures across 100 consecutive runs.
 3. Native unknown-tool, malformed-input, oversized-input, untrusted tool-origin, unauthorized write/egress and cross-session policy tests fail closed.
 4. No network effects, secrets or customer information in committed artifacts.
