@@ -4,6 +4,7 @@
 #include "simulator/capstone_security.hpp"
 #include "simulator/supplychain_security.hpp"
 #include "simulator/vector_security.hpp"
+#include "simulator/a2a_security.hpp"
 #include <iostream>
 #include <string_view>
 
@@ -113,6 +114,24 @@ int main(int argc, char** argv) {
   if (argc == 8 && std::string_view(argv[1]) == "vector" && std::string_view(argv[2]) == "query") {
     std::cout << simulator::vector_security::query(argv[3], argv[4], argv[5], argv[6], argv[7]) << '\n'; return 0;
   }
-  std::cerr << "Usage: simulator vector list | simulator vector report | simulator vector baseline <reviewer> | simulator vector assess <scenario_id> <reviewer> | simulator vector simulate <scenario_id> <reviewer> | simulator vector query <role> <tenant_scope> <classification> <purpose> <result_kind> | simulator supplychain list | simulator supplychain report | simulator supplychain baseline <reviewer> | simulator supplychain assess <scenario_id> <reviewer> | simulator supplychain simulate <scenario_id> <reviewer> | simulator capstone list | simulator capstone report | simulator capstone assess <scenario_id> <reviewer> | simulator capstone simulate <scenario_id> <source> <role> <scope> <approval> | simulator recon list | simulator recon inspect <scenario_id> <viewer|operator|reviewer> | simulator list | simulator call <tool_name> <resource_id> | simulator security list | simulator security evaluate <source> <action> <role> <session_scope> [none|approved] | simulator security call <source> <role> <scope> <approval> <tool> <resource>\n";
+  if (argc == 3 && std::string_view(argv[1]) == "a2a" && std::string_view(argv[2]) == "list") {
+    std::cout << simulator::a2a_security::list_scenarios() << '\n'; return 0;
+  }
+  if (argc == 3 && std::string_view(argv[1]) == "a2a" && std::string_view(argv[2]) == "report") {
+    std::cout << simulator::a2a_security::report() << '\n'; return 0;
+  }
+  if (argc == 4 && std::string_view(argv[1]) == "a2a" && std::string_view(argv[2]) == "baseline") {
+    std::cout << simulator::a2a_security::baseline(argv[3]) << '\n'; return 0;
+  }
+  if (argc == 5 && std::string_view(argv[1]) == "a2a" && std::string_view(argv[2]) == "assess") {
+    std::cout << simulator::a2a_security::assess(argv[3], argv[4]) << '\n'; return 0;
+  }
+  if (argc == 5 && std::string_view(argv[1]) == "a2a" && std::string_view(argv[2]) == "simulate") {
+    std::cout << simulator::a2a_security::simulate(argv[3], argv[4]) << '\n'; return 0;
+  }
+  if (argc == 8 && std::string_view(argv[1]) == "a2a" && std::string_view(argv[2]) == "delegate") {
+    std::cout << simulator::a2a_security::delegate(argv[3], argv[4], argv[5], argv[6], argv[7]) << '\n'; return 0;
+  }
+  std::cerr << "Usage: simulator a2a list | simulator a2a report | simulator a2a baseline <reviewer> | simulator a2a assess <scenario_id> <reviewer> | simulator a2a simulate <scenario_id> <reviewer> | simulator a2a delegate <role> <tenant_scope> <session_scope> <capability> <approval> | simulator vector list | simulator vector report | simulator vector baseline <reviewer> | simulator vector assess <scenario_id> <reviewer> | simulator vector simulate <scenario_id> <reviewer> | simulator vector query <role> <tenant_scope> <classification> <purpose> <result_kind> | simulator supplychain list | simulator supplychain report | simulator supplychain baseline <reviewer> | simulator supplychain assess <scenario_id> <reviewer> | simulator supplychain simulate <scenario_id> <reviewer> | simulator capstone list | simulator capstone report | simulator capstone assess <scenario_id> <reviewer> | simulator capstone simulate <scenario_id> <source> <role> <scope> <approval> | simulator recon list | simulator recon inspect <scenario_id> <viewer|operator|reviewer> | simulator list | simulator call <tool_name> <resource_id> | simulator security list | simulator security evaluate <source> <action> <role> <session_scope> [none|approved] | simulator security call <source> <role> <scope> <approval> <tool> <resource>\n";
   return 64;
 }

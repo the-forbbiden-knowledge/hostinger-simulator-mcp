@@ -20,6 +20,7 @@ All operations are local mock previews. **No cloud accounts, DNS zones, virtual 
 - **Cross-zone resilience model (synthetic):** 17 modeled multi-stage trust-boundary risks across public application, DMZ, gateway, development, database, file services, retrieval and identity. Every unsafe transition is denied as a local policy fixture; one read-only health preview provides a positive control.
 - **AI component intake (synthetic):** 26 supply-chain risk fixtures spanning MCP server releases, dependency resolution, unsafe deserialization, model weights, datasets, adapters, tokenizers, build infrastructure, hardware and third parties. The fail-closed C++ policy evaluates *simulated* evidence. No real artifact is loaded, scanned, hashed or cryptographically verified.
 - **Embedding privacy (synthetic):** 22 vector retrieval, inversion-exposure and tenant-isolation risk fixtures; no real embedding model, vector database or retrieval API is connected.
+- **Multi-agent / A2A safety (synthetic):** 24 offline agent discovery, trust, delegation, task integrity and output-safety fixtures; no real Agent Card lookup, A2A transport, cryptographic verification, DNS resolution or network agent connection is implemented. **123 total synthetic cases** are currently inventoried, not proven vulnerabilities.
 - **Testing:** CTest + ExUnit; dependency scanning, fuzzing, static analysis, reproducibility tests and observability are delivery gates.
 
 ## Repository layout
@@ -30,7 +31,7 @@ project/
   CMakePresets.json           Windows configuration presets
   include/simulator/          Native public interfaces
   src/native/                 Native simulator, policy engine and CLI
-  tests/                      Native, agent, exposure, cross-zone, supply-chain and vector tests
+  tests/                      Native, agent, exposure, cross-zone, supply-chain, vector and A2A tests
   elixir/                     Minimal Mix application with Port wrapper
   .github/workflows/          Windows build/test CI
 ```
@@ -62,6 +63,11 @@ ctest --preset windows-msvc -C Release --output-on-failure
 .\out\build\windows-msvc\Release\simulator.exe vector simulate candidate_membership_probe reviewer
 .\out\build\windows-msvc\Release\simulator.exe vector query operator same_tenant public search redacted_summary
 .\out\build\windows-msvc\Release\simulator.exe vector query reviewer other_tenant public search redacted_summary
+.\out\build\windows-msvc\Release\simulator.exe a2a list
+.\out\build\windows-msvc\Release\simulator.exe a2a report
+.\out\build\windows-msvc\Release\simulator.exe a2a simulate untrusted_agent_card reviewer
+.\out\build\windows-msvc\Release\simulator.exe a2a delegate operator same_tenant same_session read_only approved
+.\out\build\windows-msvc\Release\simulator.exe a2a delegate operator other_tenant same_session read_only approved
 .\out\build\windows-msvc\Release\simulator.exe capstone report
 .\out\build\windows-msvc\Release\simulator.exe capstone assess rag_file_boundary reviewer
 .\out\build\windows-msvc\Release\simulator.exe capstone simulate rag_file_boundary retrieved_document reviewer same_session approved
@@ -112,7 +118,7 @@ Architecture, service scenarios, the engineering technique matrix and delivery g
 
 ### Complete layered architecture and trust boundaries
 
-The following is the **target architecture**, not an assertion that every service exists yet. Solid flow lines represent designed data paths. The compiled baseline is the local C++ simulator, native authorization gate, offline security-case inventory and offline cross-zone control model, supply-chain intake fixtures and vector privacy fixtures; all network ingress, real vector search, embedding creation, inference, durable memory and interactive UI components remain planned.
+The following is the **target architecture**, not an assertion that every service exists yet. Solid flow lines represent designed data paths. The compiled baseline is the local C++ simulator, native authorization gate, offline security-case inventory and offline cross-zone control model, supply-chain intake, vector privacy and A2A delegation fixtures; all network ingress, real vector search, embedding creation, inference, durable memory and interactive UI components remain planned.
 
 ```mermaid
 flowchart TD
@@ -137,6 +143,33 @@ flowchart TD
     CHUNK --> EMBED[Pinned embedding model - planned]
     EMBED --> VDB
     DOC -. future pre-ranking ACL filter .-> RGATE
+    subgraph A2A[Multi-agent and A2A trust boundary - network components planned]
+        direction TB
+        A2ADISC[Agent discovery - well-known card or curated registry - planned]
+        A2ACARD[Agent Card origin / signing / endpoint verification - planned]
+        A2AID[Peer identity / tenant / task ownership - planned]
+        A2AGATE[A2A delegation decision gate - implemented offline fixture]
+        A2AORCH[Orchestrator hub-spoke - planned]
+        A2APEER[Peer-to-peer agents - planned]
+        A2ASWARM[Supervisor / quorum / swarm - planned]
+        A2ATASK[Task state / replay / hop / capability limits - planned]
+        A2AOUT[Artifact and callback integrity checks - planned]
+        A2ADISC --> A2ACARD
+        A2ACARD --> A2AID
+        A2AID --> A2AGATE
+        A2AGATE -->|Future authorized task| A2AORCH
+        A2AORCH -. future peer delegation .-> A2APEER
+        A2AORCH -. future supervisor coordination .-> A2ASWARM
+        A2APEER -. future result .-> A2ATASK
+        A2ASWARM -. future result .-> A2ATASK
+        A2ATASK -. future output validation .-> A2AOUT
+    end
+    AGENT -. future multi-agent coordination .-> A2ADISC
+    AUTH -. trusted identity to future A2A gateway .-> A2AID
+    A2AGATE -->|Synthetic denied delegation| DENY
+    A2AGATE -->|Read-only metadata fixture| FIX
+    A2AOUT -. future tool and artifact policy .-> POLICY
+    NATIVE --> A2AGATE
     AGENT --> MEM[Tenant-scoped memory - planned]
     AGENT --> CAP[Identity-scoped MCP tool registry - planned]
     CAP --> POLICY[Trusted action authorization - C++ baseline]
@@ -201,12 +234,13 @@ flowchart TD
     GW -. future integration .-> OBS
     POLICY -. future integration .-> OBS
     VSEC -. future audit / vector query telemetry .-> OBS
+    A2AGATE -. future agent handoff traces .-> OBS
     EXT[Live providers and corporate networks - NOT connected] -. no external effects .-> FIX
 ```
 
-**Trust zones:** the public ingress is untrusted; agent prompts, retrieved documents, web pages, model output, tool results and memory are **data-only**; authority comes from independently authenticated application context. Private tool schemas, backend versions, document names, embedding configuration and debug details require separate exposure controls. Rendered health and error responses must disclose no infrastructure topology. The native C++ CLI is a developer diagnostic, not an MCP or HTTP authorization endpoint. The supply-chain section depicts proposed intake paths, **not trusted links already implemented between registries and running components**. Embeddings are semantically informative representations and must never be treated as one-way hashes or inherently anonymized data.
+**Trust zones:** the public ingress is untrusted; agent prompts, retrieved documents, web pages, model output, tool results and memory are **data-only**; authority comes from independently authenticated application context. Private tool schemas, backend versions, document names, embedding configuration and debug details require separate exposure controls. Rendered health and error responses must disclose no infrastructure topology. The native C++ CLI is a developer diagnostic, not an MCP or HTTP authorization endpoint. The supply-chain section depicts proposed intake paths, **not trusted links already implemented between registries and running components**. Embeddings are semantically informative representations and must never be treated as one-way hashes or inherently anonymized data. **Agent Cards and agent outputs are discovery/data inputs, not authorization**: the simulated strict signed-card requirement is an optional hardening policy, not a claim that every compliant A2A Agent Card MUST be signed.
 
-**Implementation boundary:** `simulator security call` enforces the local native permission preview. `simulator recon inspect` separately exercises synthetic information-disclosure decisions. `simulator capstone simulate` evaluates offline risk-chain fixtures and never opens a session, network route or privilege. `simulator supplychain` checks metadata-only local fixtures, not actual signatures, SBOMs, hashes or models. `simulator vector` checks synthetic retrieval-policy metadata without computing embeddings, connecting to a vector database, running an inversion model or exporting data. Neither command accepts real credentials, sends requests or operates on live tenants. The current Elixir adapter does not yet enforce these gates end to end. A future network service MUST bind source, identity, role and approval server-side, not allow clients or models to select them.
+**Implementation boundary:** `simulator security call` enforces the local native permission preview. `simulator recon inspect` separately exercises synthetic information-disclosure decisions. `simulator capstone simulate` evaluates offline risk-chain fixtures and never opens a session, network route or privilege. `simulator supplychain` checks metadata-only local fixtures, not actual signatures, SBOMs, hashes or models. `simulator vector` checks synthetic retrieval-policy metadata without computing embeddings, connecting to a vector database, running an inversion model or exporting data. None of these commands accepts real credentials, sends requests or operates on live tenants. The new `simulator a2a` command is a local metadata-only gate, not an A2A server, protocol parser or cryptographic signature verifier. The current Elixir adapter does not yet enforce these gates end to end. A future network service MUST bind source, identity, role and approval server-side, not allow clients or models to select them.
 
 ### Boundaries and safety
 
@@ -406,7 +440,7 @@ The intake model covers **26 negative cases** across six component families: tra
 .\out\build\windows-msvc\Release\simulator.exe supplychain report
 ```
 
-**Acceptance:** all 26 negative cases reject a mismatched gate; unrecognized assets and unauthorized roles receive uniform denial; a known-good *metadata fixture* passes; all responses remain local with `network_access:false` and `side_effects:false`; release CI passes 29 CTest targets. Real acceptance requires independently computed SHA-256, signature and provenance checks, license policy, generation of actual SBOM/AI-BOM, controlled registry resolution, file-format sandboxing, model behavior tests, reviewer identity and operational audit trails.
+**Acceptance:** all 26 negative cases reject a mismatched gate; unrecognized assets and unauthorized roles receive uniform denial; a known-good *metadata fixture* passes; all responses remain local with `network_access:false` and `side_effects:false`; release CI passes 36 CTest targets. Real acceptance requires independently computed SHA-256, signature and provenance checks, license policy, generation of actual SBOM/AI-BOM, controlled registry resolution, file-format sandboxing, model behavior tests, reviewer identity and operational audit trails.
 
 ## Vector / embedding privacy — offline synthetic controls
 
@@ -442,7 +476,44 @@ The embedding boundary models **22 negative cases** across raw-vector exposure, 
 .\out\build\windows-msvc\Release\simulator.exe vector report
 ```
 
-**Acceptance for the offline module:** 22/22 negative case fixtures are denied by their expected gate; unexpected IDs and unauthorized roles return the same denial; positive fixtures contain no raw vector/chunk bytes; safe mock preview requires matched scope and a redacted result kind; 29 CTest targets pass on a supported build. **Not yet validated:** independent cryptographic access evidence, actual vector database permission enforcement, inversion-resistance, rate-limit enforcement, sensitive-data sanitization, real audit logging, Elixir/Phoenix end-to-end binding and MCP protocol conformance.
+**Acceptance for the offline module:** 22/22 negative case fixtures are denied by their expected gate; unexpected IDs and unauthorized roles return the same denial; positive fixtures contain no raw vector/chunk bytes; safe mock preview requires matched scope and a redacted result kind; 36 CTest targets pass on a supported build. **Not yet validated:** independent cryptographic access evidence, actual vector database permission enforcement, inversion-resistance, rate-limit enforcement, sensitive-data sanitization, real audit logging, Elixir/Phoenix end-to-end binding and MCP protocol conformance.
+
+## Multi-agent / A2A security — offline synthetic controls
+
+This stage models **24 negative risk cases** for three coordination topologies: central orchestrator (hub-and-spoke), peer-to-peer delegation, and supervisor/quorum/swarm workflows. These patterns describe architectural arrangements, not protocol-specific message types. The A2A layer is **not networked or wire-compatible** in this release; the C++ module enforces deterministic fixture decisions only. Combined inventory: **14 agent + 20 exposure + 17 cross-zone + 26 supply-chain + 22 vector + 24 multi-agent = 123 synthetic scenarios**. None are evidence of compromise or discovered vulnerabilities.
+
+### Agent discovery, task integrity and delegation gates
+
+| Trust surface | Production requirement | Current local evidence |
+|---|---|---|
+| Registration and Agent Cards | Authenticate registry writes; verify origin, endpoint and declared skills; enforce an approved trust policy | Negative fixtures for unauthorized registration, false identity, endpoint redirection and capability overclaim |
+| Agent Card signatures | Optionally require a trusted, cryptographically validated Agent Card signature as **deployment hardening**; the protocol itself allows unsigned cards | Boolean **synthetic evidence only**; no JWS, certificate, DNS or key verification implemented |
+| Inter-agent authorization | Derive identity, tenant, session and task owner from authenticated server context; never inherit orchestrator privileges | Strict role, scope, peer, downscoping and task-owner checks on local fixtures |
+| Coordination and task lifecycle | Enforce max hop depth, state-machine transitions, replay rejection and independent approvals/quorum | Negative fixture outcomes for replay, unbounded chains, skipped reviews and quorum bypass |
+| Tool, database and retrieval requests | Server-owned tool allowlist, read-only parameterized queries, independent authorization and data-only tool results | Policy gates deny unsafe query handoffs, privileged tools and prompt-induced instruction promotion |
+| Outputs, links and callbacks | Inspect generated artifacts and link targets, constrain callbacks, bind traces to tasks, do not forward credentials | Synthetic checks for artifact integrity, display/URL mismatch, credential forwarding and audit correlation |
+| Serialization and transport | Validate actual A2A message schema and size, negotiate supported interfaces, enforce TLS and peer identity | Length-bounded fixture and TLS-policy markers; **no protocol parsing or network transport** |
+
+The local `a2a delegate` command accepts role, scope, capability and approval **only to exercise test branches**. These strings are not proofs of authority. A real gateway must construct the authorization evidence itself from authenticated identities, validated Agent Cards, verified task ownership, trusted registries and actual cryptographic checks. An LLM or another agent cannot grant permission by including fields in a message.
+
+```powershell
+# Enumerate the 24 simulated trust-boundary risks and safety evidence
+.\out\build\windows-msvc\Release\simulator.exe a2a list
+.\out\build\windows-msvc\Release\simulator.exe a2a assess untrusted_agent_card reviewer
+.\out\build\windows-msvc\Release\simulator.exe a2a simulate untrusted_agent_card reviewer
+.\out\build\windows-msvc\Release\simulator.exe a2a report
+
+# Read-only metadata preview; no agent is contacted
+.\out\build\windows-msvc\Release\simulator.exe a2a baseline reviewer
+.\out\build\windows-msvc\Release\simulator.exe a2a delegate operator same_tenant same_session read_only approved
+
+# Expected uniform denial: cross-tenant or unauthorized scope
+.\out\build\windows-msvc\Release\simulator.exe a2a delegate operator other_tenant same_session read_only approved
+.\out\build\windows-msvc\Release\simulator.exe a2a delegate operator same_tenant same_session privileged approved
+.\out\build\windows-msvc\Release\simulator.exe a2a delegate operator same_tenant same_session read_only none
+```
+
+**Acceptance:** every one of 24 negative fixtures must fail at its specifically expected gate; unknown IDs and unauthorized review access must receive identical denial; the approved fixture is read-only, deterministic and contains no network effects; `a2a report` must expose **zero** actual external tasks and must not invent real attack-success measurements. Current suite totals **36 CTest targets**, including 7 newly added for A2A. **Pending:** real agent discovery, A2A transport/method conformance, Agent Card JWS verification, outbound TLS server identity checks, protocol version negotiation, callback security, production role binding, supervisor recovery, network-level audit telemetry and runtime load/fault testing.
 
 ## Simulator service and collaboration scope
 
@@ -486,8 +557,9 @@ Proposed synthetic scenarios include `scheduled_maintenance`, `urgent_ticket`, `
 | Delivery | requirements, risk review, acceptance gates, tracked metrics | release checklist | planned |
 | Data hygiene | redaction, retention controls, immutable synthetic fixtures | static checks | guideline |
 | Simulation | deterministic fixtures, no external effects, explicit mock markers | side-effect assertions | implemented baseline |
-| AI exposure mapping | gateway, tool schemas, RAG sources, inference metadata and logging surfaces | role-gated synthetic recon inventory; 29 CTest targets total | 20 offline fixtures implemented; live integrations planned |
+| AI exposure mapping | gateway, tool schemas, RAG sources, inference metadata and logging surfaces | role-gated synthetic recon inventory; 36 CTest targets total | 20 offline fixtures implemented; live integrations planned |
 | Vector / embedding privacy | tenant ACL before retrieval, raw-vector export denial, result redaction, probe budgets, pinned model metadata, audit | CTest negative + positive fixtures (22 cases), uniform denial; real vector DB tests pending | Offline C++ gate; real embeddings/RAG planned |
+| Multi-agent / A2A trust | agent registry and card verification, peer authorization, scoped delegation, task ownership, replay protection, safe artifacts and callbacks | 24 negative fixtures + 7 dedicated CTest targets; real protocol conformance pending | Offline C++ gate; A2A transport and JWS verification planned |
 
 ### Metrics
 
@@ -497,6 +569,7 @@ Proposed synthetic scenarios include `scheduled_maintenance`, `urgent_ticket`, `
 - Median and p95 latency of isolated native calls.
 - OTP worker recovery time after induced failure.
 - Windows build/test success rate and dependency vulnerabilities.
+- Agent-to-agent risk-case denial coverage (24/24 expected), correct-gate match rate, uniform unauthorized response parity, denied cross-tenant delegation, zero real tasks, and future measured card-signature acceptance / replay rejection rates.
 - Vector privacy gate denial coverage (22/22 expected), tenant/session cross-access denial, raw-vector export denials, top-k and query-budget policy checks; real inversion resistance and privacy leakage rates not measured.
 - Synthetic supply-chain gate denial coverage (26/26 expected), trusted metadata fixture positive control, unauthorized introspection parity, and real artifact integrity verification coverage (currently zero).
 - Information-disclosure negative-test coverage, uniform-denial pass rate, synthetic exposure fixture completeness, and unauthorized tool-schema leakage (target: zero).
@@ -507,7 +580,7 @@ All performance and reliability claims must come from measured executions, not a
 
 ## Delivery criteria and release gates
 
-1. Windows x64 Visual Studio 2022/CMake configure, build, CTest green (29 targets including native policy, exposure, cross-zone, supply-chain and vector privacy fixtures).
+1. Windows x64 Visual Studio 2022/CMake configure, build, CTest green (36 targets including native policy, exposure, cross-zone, supply-chain, vector privacy and multi-agent/A2A fixtures).
 2. Inputs/outputs (including offline reconnaissance fixture inventory) match documented deterministic fixtures across 100 consecutive runs.
 3. Native unknown-tool, malformed-input, oversized-input, untrusted tool-origin, unauthorized write/egress and cross-session policy tests fail closed.
 4. No network effects, secrets or customer information in committed artifacts.
@@ -522,9 +595,9 @@ All performance and reliability claims must come from measured executions, not a
 
 - Gate 1: This revision passed local Debug and Release CTest; Windows 2022 GitHub Actions requires a fresh green run for this commit.
 - Gate 2: not run at scale.
-- Gate 3: native runtime checks and negative agent-policy tests included; complete security coverage and real agent injection resistance not claimed.
+- Gate 3: native runtime checks and negative agent-policy, multi-agent and A2A fixture tests included; complete security coverage and real agent injection resistance not claimed.
 - Gate 4: repository content screened for private reference files; this is not a formal secret-scanning attestation.
-- Gates 5-9: future work. The supply-chain and vector privacy engines are metadata fixtures, not automated verification of genuine external dependencies, embeddings or vector search authorization.
+- Gates 5-9: future work. The supply-chain, vector privacy and A2A engines are metadata fixtures, not automated verification of genuine external dependencies, embeddings or vector search authorization.
 - Gate 10: private manifests generated in companion library.
 
 

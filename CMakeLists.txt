@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library(simulator_core STATIC src/native/simulator.cpp src/native/agent_security.cpp src/native/recon_security.cpp src/native/capstone_security.cpp src/native/supplychain_security.cpp src/native/vector_security.cpp)
+add_library(simulator_core STATIC src/native/simulator.cpp src/native/agent_security.cpp src/native/recon_security.cpp src/native/capstone_security.cpp src/native/supplychain_security.cpp src/native/vector_security.cpp src/native/a2a_security.cpp)
 target_include_directories(simulator_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 if(MSVC)
@@ -64,3 +64,13 @@ add_test(NAME vector_negative COMMAND simulator vector simulate candidate_member
 add_test(NAME vector_positive_fixture COMMAND simulator vector baseline reviewer)
 add_test(NAME vector_safe_query COMMAND simulator vector query operator same_tenant public search redacted_summary)
 add_test(NAME vector_cross_tenant_denied COMMAND simulator vector query reviewer other_tenant public search redacted_summary)
+
+add_executable(a2a_security_tests tests/a2a_security_tests.cpp)
+target_link_libraries(a2a_security_tests PRIVATE simulator_core)
+add_test(NAME a2a_policy_unit COMMAND a2a_security_tests)
+add_test(NAME a2a_inventory COMMAND simulator a2a list)
+add_test(NAME a2a_report COMMAND simulator a2a report)
+add_test(NAME a2a_negative COMMAND simulator a2a simulate untrusted_agent_card reviewer)
+add_test(NAME a2a_positive_fixture COMMAND simulator a2a baseline reviewer)
+add_test(NAME a2a_safe_delegate COMMAND simulator a2a delegate operator same_tenant same_session read_only approved)
+add_test(NAME a2a_cross_tenant_denied COMMAND simulator a2a delegate operator other_tenant same_session read_only approved)
