@@ -174,3 +174,14 @@ add_test(NAME lifecycle_negative_approval COMMAND lifecycle_cli simulate missing
 add_test(NAME lifecycle_closure_preview COMMAND lifecycle_cli advance reviewer same_tenant independent_retest closed retest_passed approved_read_only redacted_trace)
 set_tests_properties(lifecycle_negative_skip lifecycle_negative_unverified lifecycle_negative_approval PROPERTIES PASS_REGULAR_EXPRESSION "no_go")
 set_tests_properties(lifecycle_closure_preview PROPERTIES PASS_REGULAR_EXPRESSION "allow_preview")
+
+# Cross-cutting reliability contracts against the real native executable.
+find_package(Threads REQUIRED)
+add_executable(resilience_invariants_tests tests/resilience_invariants_tests.cpp)
+target_link_libraries(resilience_invariants_tests PRIVATE simulator_core Threads::Threads)
+add_test(NAME native_resilience_invariants COMMAND resilience_invariants_tests)
+add_test(NAME native_cli_contract COMMAND
+  ${CMAKE_COMMAND}
+  "-DSIMULATOR_EXE=$<TARGET_FILE:simulator>"
+  -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/cli_contract.cmake")
+set_tests_properties(native_resilience_invariants native_cli_contract PROPERTIES TIMEOUT 20)
