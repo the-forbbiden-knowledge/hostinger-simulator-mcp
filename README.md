@@ -867,7 +867,7 @@ The fixture lifecycle is: **mission and authorized scope → evidence / hypothes
 
 ## Zimbra collaboration and service boundary — offline model
 
-The historical SpecialAI Zimbra Hosting Proposal #2514 (draft, 2011) and SpecialAI Zimbra SLA are retained **only as private reference material**. They distinguish **hosted** services (customer administration, provider infrastructure support) from **fully managed** services (provider account administration and end-user helpdesk), plus mail, contacts, calendars, document sharing, migration and backup/restore. They do **not** establish current contractual terms or production guarantees for this project. The proposal describes 99.9% *server* availability whereas the separate SLA uses a differently scoped 100% service/network term with exclusions; neither is an achieved measurement or an enforceable commitment by this simulator.
+The service model distinguishes **hosted** administration (customer-managed accounts and provider-operated infrastructure) from **fully managed** administration (provider-managed accounts and end-user support). Mail, calendars, contacts, shared documents, support, migration, and restore are modeled as bounded local fixtures. No production service-level agreement, real uptime guarantee, customer contract, or remote service is implemented.
 
 Implemented now: the C++20 `zimbra` command evaluates **9 synthetic negative service-policy scenarios** and static read-only previews for both service plans. Real account administration, helpdesk ticket creation, sending mail, restoring actual mailboxes, downtime measurement, billing and financial credits are **not implemented**. Authorization is deliberately modeled with fixture tokens only; there is no user login, Zimbra installation, network client, calendar service or mailbox storage.
 
@@ -894,10 +894,6 @@ Implemented now: the C++20 `zimbra` command evaluates **9 synthetic negative ser
 
 **Release checks:** 9/9 negative cases expected `no_go`; a hosted end-user helpdesk preview denied; reviewer-only, same-tenant, approved read-only previews allowed; unknown and unauthorized IDs denied with opaque responses; `network_access:false` and `side_effects:false` in responses. The native unit includes 71 assertions. The project now contains **89 CTest registrations** (prior 81 plus eight Zimbra tests); require local compilation and the Windows 2022 CI result for the exact published commit. The modeled fixture inventory is now **268** (previous 259 plus nine Zimbra cases), not 268 discovered vulnerabilities.
 
-### AI-300 offline HTML reading checkpoint
-
-The attached `AI-300-Ch1-offline.html` is **156,341,625 bytes**, of which nine embedded image tags account for about 156.3 MB. A bounded byte-offset scan can exclude inline Base64 while preserving HTML text (approximately 41.5 KB). The first reading pass covered the introduction and sections 1.1–1.2: scope-driven AI red teaming, model/agent/RAG/tool trust boundaries, and the importance of defensive telemetry. This material is **reference context**, not an authorization for testing third-party AI services or a finding about this product. No original HTML, embedded images, private documents, or source archives are committed. Subsequent reading passes should use offsets and keep evidence/unknowns separate; do not claim that the whole course was validated from one chapter.
-
 ## Simulator service and collaboration scope
 
 **All services below are hypothetical local fixtures; no production services are enabled.**
@@ -915,9 +911,9 @@ The attached `AI-300-Ch1-offline.html` is **156,341,625 bytes**, of which nine e
 | Billing | subscription state and synthetic charges | no financial events |
 | Ecommerce | catalog and checkout preview | no real payments |
 
-### Historical service-model inspiration (not contractual promises)
+### Service-level fixture assumptions (not contractual promises)
 
-The supplied examples distinguish **hosted** from **fully managed** administration, support windows of **8x5** with optional **24x7**, response priorities from emergency to scheduled, maintenance notification, recovery windows, and differential backup/restore capabilities. One example proposes a **100%** network-availability clause with exclusions while another uses **99.9%** server availability: these are *different scopes and historical sample claims*, not a single project SLO.
+The simulated service catalog distinguishes **hosted** and **fully managed** administration, an **8x5** support window with optional **24x7** coverage, configurable incident priorities, maintenance windows, and bounded backup/restore workflows. Example availability targets of 99.9% and 100% represent different hypothetical measurement scopes; no measured uptime or project SLA is implied.
 
 Proposed synthetic scenarios include `scheduled_maintenance`, `urgent_ticket`, `mailbox_restore`, `spam_filter`, `sync_failure`, `backup_validation`, `health_degradation`, `permissions_denied`, and `domain_propagation`.
 
