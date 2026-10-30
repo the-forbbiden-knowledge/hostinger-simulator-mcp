@@ -1,12 +1,12 @@
-#include "simulator/zimbra_security.hpp"
+#include "simulator/service_policy.hpp"
 
-namespace simulator::zimbra_security {
+namespace simulator::service_policy {
 namespace {
 std::string deny() {
   return R"({"ok":false,"decision":"deny","error":"not_available_or_authorized","mode":"simulation_only","network_access":false,"side_effects":false})";
 }
 std::string allow(std::string_view plan, std::string_view action) {
-  return std::string(R"({"ok":true,"decision":"allow_preview","service":"zimbra_collaboration_fixture","plan":")") +
+  return std::string(R"({"ok":true,"decision":"allow_preview","service":"service_collaboration_fixture","plan":")") +
          std::string(plan) + R"(","action":")" + std::string(action) +
          R"(","source_status":"historical_reference_only","mode":"simulation_only","network_access":false,"side_effects":false})";
 }
@@ -58,7 +58,7 @@ std::string list() {
   return result + "]}";
 }
 std::string report() {
-  return R"({"ok":true,"mode":"simulation_only","scenario_count":9,"source_status":"historical_reference_only","plans":["hosted","managed"],"real_zimbra_connections":0,"real_tickets":0,"live_mailboxes":0,"verified_sla_guarantees":0,"network_access":false,"side_effects":false})";
+  return R"({"ok":true,"mode":"simulation_only","scenario_count":9,"source_status":"historical_reference_only","plans":["hosted","managed"],"real_service_connections":0,"real_tickets":0,"live_mailboxes":0,"verified_sla_guarantees":0,"network_access":false,"side_effects":false})";
 }
 std::string baseline(std::string_view role) {
   const auto result = evaluate_policy(role, "managed", "same_tenant",
@@ -92,4 +92,4 @@ std::string evaluate(std::string_view role, std::string_view plan,
              ? allow(plan, action)
              : deny();
 }
-}  // namespace simulator::zimbra_security
+}  // namespace simulator::service_policy

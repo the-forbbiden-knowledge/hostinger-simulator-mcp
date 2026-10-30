@@ -1,9 +1,9 @@
-#include "simulator/zimbra_security.hpp"
+#include "simulator/service_policy.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <set>
 #include <string_view>
-using namespace simulator::zimbra_security;
+using namespace simulator::service_policy;
 int main() {
   int checks = 0;
   auto require = [&checks](bool ok, const char* label) {
@@ -35,7 +35,7 @@ int main() {
   require(evaluate("viewer", "managed", "same_tenant", "health_preview", "approved_read_only") == assess("unknown", "viewer"), "uniform denial");
   require(evaluate("reviewer", "managed", "same_tenant", "health_preview", "approved_read_only").find("allow_preview") != std::string::npos, "preview only");
   require(baseline("reviewer").find("allow_preview") != std::string::npos, "baseline");
-  require(report().find("\"real_zimbra_connections\":0") != std::string::npos, "no live provider claims");
+  require(report().find("\"real_service_connections\":0") != std::string::npos, "no live provider claims");
   require(list().find("hosted_end_user_helpdesk") != std::string::npos, "inventory");
-  std::cout << "Zimbra offline policy: " << checks << " assertions passed\n";
+  std::cout << "service offline policy: " << checks << " assertions passed\n";
 }

@@ -3,7 +3,7 @@
 #include <string_view>
 #include <vector>
 
-namespace simulator::zimbra_security {
+namespace simulator::service_policy {
 struct Scenario {
   std::string_view id;
   std::string_view domain;
@@ -25,4 +25,4 @@ std::string simulate(std::string_view scenario, std::string_view role);
 std::string evaluate(std::string_view role, std::string_view plan,
                      std::string_view tenant, std::string_view action,
                      std::string_view approval);
-}  // namespace simulator::zimbra_security
+}  // namespace simulator::service_policy

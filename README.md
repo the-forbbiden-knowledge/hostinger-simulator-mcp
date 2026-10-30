@@ -469,7 +469,7 @@ Policy decisions always mark `simulation_only` and `side_effects:false`. Evaluat
 - Gate B: real Elixir Port integration with supervision and restart tests.
 - Gate C: strictly local MCP JSON-RPC tool adapter and protocol conformance suite.
 - Gate D: Phoenix LiveView admin console and scenario editor.
-- Gate E: service scenarios, Zimbra collaboration fixtures, trace metrics and security gates.
+- Gate E: service scenarios, collaboration policy fixtures, trace metrics and security gates.
 
 
 ## Agent abuse-case matrix — synthetic lab only
@@ -865,35 +865,6 @@ The fixture lifecycle is: **mission and authorized scope → evidence / hypothes
 **Release gates:** 24/24 synthetic failure fixtures must deny at the intended gate; unauthorized and unknown selectors receive opaque responses; approved decisions are read-only and carry `network_access:false` and `side_effects:false`; unverified financial impact remains JSON `null`; 89 CTest targets pass both locally and in Windows CI for the exact published commit. Pending: live AI evaluations, real authentication, multi-party policy and responsible-AI review, consistent trace correlation, incident handling, and measurable operational impact.
 
 
-## Zimbra collaboration and service boundary — offline model
-
-The service model distinguishes **hosted** administration (customer-managed accounts and provider-operated infrastructure) from **fully managed** administration (provider-managed accounts and end-user support). Mail, calendars, contacts, shared documents, support, migration, and restore are modeled as bounded local fixtures. No production service-level agreement, real uptime guarantee, customer contract, or remote service is implemented.
-
-Implemented now: the C++20 `zimbra` command evaluates **9 synthetic negative service-policy scenarios** and static read-only previews for both service plans. Real account administration, helpdesk ticket creation, sending mail, restoring actual mailboxes, downtime measurement, billing and financial credits are **not implemented**. Authorization is deliberately modeled with fixture tokens only; there is no user login, Zimbra installation, network client, calendar service or mailbox storage.
-
-| Boundary | Hosted fixture | Fully managed fixture | Verification status |
-|---|---|---|---|
-| Service health, administrator support | Read-only preview | Read-only preview | Local policy test only |
-| End-user helpdesk, account change | Denied outside hosted scope | Read-only preview only | Local policy test only |
-| Mailbox backup/restore, collaboration | Read-only preview | Read-only preview | No actual restore or sync |
-| Cross-tenant operations, missing approval | Denied | Denied | Static input checks |
-| External mail, billing credit, unsupported SLA claims | Denied / non-operational | Denied / non-operational | No network or financial activity |
-| Message/tool content attempting authority | Denied synthetic fixture | Denied synthetic fixture | No live AI or MIME parser |
-
-### Zimbra fixture CLI (Windows PowerShell)
-
-~~~powershell
-.\out\build\windows-msvc\Release\simulator.exe zimbra list
-.\out\build\windows-msvc\Release\simulator.exe zimbra report
-.\out\build\windows-msvc\Release\simulator.exe zimbra simulate hosted_end_user_helpdesk reviewer
-.\out\build\windows-msvc\Release\simulator.exe zimbra simulate cross_tenant_restore reviewer
-.\out\build\windows-msvc\Release\simulator.exe zimbra evaluate reviewer hosted same_tenant restore_preview approved_read_only
-.\out\build\windows-msvc\Release\simulator.exe zimbra evaluate reviewer managed same_tenant end_user_support_preview approved_read_only
-.\out\build\windows-msvc\Release\simulator.exe zimbra evaluate reviewer hosted same_tenant end_user_support_preview approved_read_only
-~~~
-
-**Release checks:** 9/9 negative cases expected `no_go`; a hosted end-user helpdesk preview denied; reviewer-only, same-tenant, approved read-only previews allowed; unknown and unauthorized IDs denied with opaque responses; `network_access:false` and `side_effects:false` in responses. The native unit includes 71 assertions. The project now contains **89 CTest registrations** (prior 81 plus eight Zimbra tests); require local compilation and the Windows 2022 CI result for the exact published commit. The modeled fixture inventory is now **268** (previous 259 plus nine Zimbra cases), not 268 discovered vulnerabilities.
-
 ## Simulator service and collaboration scope
 
 **All services below are hypothetical local fixtures; no production services are enabled.**
@@ -910,6 +881,29 @@ Implemented now: the C++20 `zimbra` command evaluates **9 synthetic negative ser
 | Security | roles, alerts, audit, antispam/antimalware events | test auth boundaries |
 | Billing | subscription state and synthetic charges | no financial events |
 | Ecommerce | catalog and checkout preview | no real payments |
+
+### Implemented service-plan security checks
+
+The native `simulator service` command exposes **nine deterministic, offline service-policy scenarios** and read-only previews for hosted and fully managed plans. The policy separates provider and customer responsibilities, enforces approved scope and same-tenant access, and prevents live mail delivery, account changes, real restores and financial effects. These are **synthetic controls**, not provider integrations, operational guarantees or customer-service commitments.
+
+| Implemented control | Hosted preview | Fully managed preview |
+|---|---|---|
+| Health, administrator support | Read-only | Read-only |
+| End-user helpdesk and account change | Denied | Read-only |
+| Backup restore and collaboration | Read-only | Read-only |
+| Cross-tenant, unapproved, external mail or financial operations | Denied | Denied |
+
+~~~powershell
+.\out\build\windows-msvc\Release\simulator.exe service list
+.\out\build\windows-msvc\Release\simulator.exe service report
+.\out\build\windows-msvc\Release\simulator.exe service simulate hosted_end_user_helpdesk reviewer
+.\out\build\windows-msvc\Release\simulator.exe service evaluate reviewer hosted same_tenant restore_preview approved_read_only
+.\out\build\windows-msvc\Release\simulator.exe service evaluate reviewer managed same_tenant end_user_support_preview approved_read_only
+~~~
+
+**Verification boundary:** nine negative cases are modeled; the native unit includes 71 assertions; the repository registers **89 CTest targets**. All outputs remain local (`network_access:false`, `side_effects:false`). There is no live identity provider, mail server, mailbox storage or actual SLA calculation.
+
+
 
 ### Service-level fixture assumptions (not contractual promises)
 
