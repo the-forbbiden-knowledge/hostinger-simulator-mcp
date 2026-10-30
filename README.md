@@ -504,7 +504,7 @@ Use a bounded, isolated **inventory -> synthetic probe -> policy decision -> exp
 - Secret disclosure and network egress are disabled even for privileged local role fixtures.
 - Shared-memory writes need trusted application context, reviewer role and explicit approval, and still remain preview-only.
 - Authorized calls remain constrained by the native tool allowlist, resource validation and `side_effects:false`.
-- Compile and run the full 81-target CTest suite in supported builds. Windows execution must be confirmed by CI for this commit; Erlang Port/Elixir end-to-end evaluation remains pending.
+- Compile and run the full 89-target CTest suite in supported builds. Windows execution must be confirmed by CI for this commit; Erlang Port/Elixir end-to-end evaluation remains pending.
 
 **Scope limits:** No prompt-injection classifier, multi-agent orchestrator, real OAuth/RBAC implementation, real session storage, HTML parser, Unicode normalization engine, MCP wire adapter, Phoenix app, or production telemetry is included yet. The cases above define the requirements and the testable native authorization baseline, not a finished platform.
 
@@ -580,7 +580,7 @@ The enterprise threat model describes **17 independently testable trust-boundary
 
 **Controls and evidence:** C++ evaluates local fixture roles and sources, not authenticated identities. There are no connection tunnels, payloads, credentials, scans, Windows domain operations, SQL connections or modifications of live systems. Each response explicitly declares `simulation_only`, `network_access:false` and `side_effects:false`. The report exposes `real_attacks_executed:0` and `real_detection_rate:null`, so modeled policy coverage cannot be misrepresented as incident-prevention performance.
 
-**Acceptance gates:** deny all 17 modeled unsafe paths; preserve indistinguishable denial for unknown/unauthorized identifiers; deny untrusted source, cross-session and missing-approval variations; allow only the synthetic positive health fixture; verify every returned record remains read-only; run the 81-target CTest suite in Debug, Release and Windows CI. Future real integration needs trusted server-issued identities, data-layer ACLs, runtime telemetry, RAG ingestion tests, and independently reviewed adversarial validation.
+**Acceptance gates:** deny all 17 modeled unsafe paths; preserve indistinguishable denial for unknown/unauthorized identifiers; deny untrusted source, cross-session and missing-approval variations; allow only the synthetic positive health fixture; verify every returned record remains read-only; run the 89-target CTest suite in Debug, Release and Windows CI. Future real integration needs trusted server-issued identities, data-layer ACLs, runtime telemetry, RAG ingestion tests, and independently reviewed adversarial validation.
 
 ## AI/ML supply-chain integrity — offline synthetic controls
 
@@ -617,7 +617,7 @@ The intake model covers **26 negative cases** across six component families: tra
 .\out\build\windows-msvc\Release\simulator.exe supplychain report
 ```
 
-**Acceptance:** all 26 negative cases reject a mismatched gate; unrecognized assets and unauthorized roles receive uniform denial; a known-good *metadata fixture* passes; all responses remain local with `network_access:false` and `side_effects:false`; release CI passes 81 CTest targets. Real acceptance requires independently computed SHA-256, signature and provenance checks, license policy, generation of actual SBOM/AI-BOM, controlled registry resolution, file-format sandboxing, model behavior tests, reviewer identity and operational audit trails.
+**Acceptance:** all 26 negative cases reject a mismatched gate; unrecognized assets and unauthorized roles receive uniform denial; a known-good *metadata fixture* passes; all responses remain local with `network_access:false` and `side_effects:false`; release CI passes 89 CTest targets. Real acceptance requires independently computed SHA-256, signature and provenance checks, license policy, generation of actual SBOM/AI-BOM, controlled registry resolution, file-format sandboxing, model behavior tests, reviewer identity and operational audit trails.
 
 ## Vector / embedding privacy — offline synthetic controls
 
@@ -653,7 +653,7 @@ The embedding boundary models **22 negative cases** across raw-vector exposure, 
 .\out\build\windows-msvc\Release\simulator.exe vector report
 ```
 
-**Acceptance for the offline module:** 22/22 negative case fixtures are denied by their expected gate; unexpected IDs and unauthorized roles return the same denial; positive fixtures contain no raw vector/chunk bytes; safe mock preview requires matched scope and a redacted result kind; 81 CTest targets pass on a supported build. **Not yet validated:** independent cryptographic access evidence, actual vector database permission enforcement, inversion-resistance, rate-limit enforcement, sensitive-data sanitization, real audit logging, Elixir/Phoenix end-to-end binding and MCP protocol conformance.
+**Acceptance for the offline module:** 22/22 negative case fixtures are denied by their expected gate; unexpected IDs and unauthorized roles return the same denial; positive fixtures contain no raw vector/chunk bytes; safe mock preview requires matched scope and a redacted result kind; 89 CTest targets pass on a supported build. **Not yet validated:** independent cryptographic access evidence, actual vector database permission enforcement, inversion-resistance, rate-limit enforcement, sensitive-data sanitization, real audit logging, Elixir/Phoenix end-to-end binding and MCP protocol conformance.
 
 ## Multi-agent / A2A security — offline synthetic controls
 
@@ -698,7 +698,7 @@ The local `a2a delegate` command accepts role, scope, capability and approval **
 .\out\build\windows-msvc\Release\simulator.exe a2a delegate operator same_tenant same_session read_only none
 ```
 
-**Acceptance:** every one of 24 negative fixtures must fail at its specifically expected gate; unknown IDs and unauthorized review access must receive identical denial; the approved fixture is read-only, deterministic and contains no network effects; `a2a report` must expose **zero** actual external tasks and must not invent real attack-success measurements. The current project suite totals **81 CTest targets**, including 7 dedicated A2A cases and 9 infrastructure tests. **Pending:** real agent discovery, A2A transport/method conformance, Agent Card JWS verification, outbound TLS server identity checks, protocol version negotiation, callback security, production role binding, supervisor recovery, network-level audit telemetry and runtime load/fault testing.
+**Acceptance:** every one of 24 negative fixtures must fail at its specifically expected gate; unknown IDs and unauthorized review access must receive identical denial; the approved fixture is read-only, deterministic and contains no network effects; `a2a report` must expose **zero** actual external tasks and must not invent real attack-success measurements. The current project suite totals **89 CTest targets**, including 7 dedicated A2A cases and 9 infrastructure tests. **Pending:** real agent discovery, A2A transport/method conformance, Agent Card JWS verification, outbound TLS server identity checks, protocol version negotiation, callback security, production role binding, supervisor recovery, network-level audit telemetry and runtime load/fault testing.
 
 ## Living threat model — evidence, scope and decisions (offline synthetic controls)
 
@@ -763,7 +763,7 @@ This stage extends the single architecture diagram with the **five AI deployment
 
 **Expected outcomes:** all 28 negative scenarios return `no_go` with the matching failed policy gate; an authorized role with trusted local fixture metadata obtains only `allow_preview`. Unknown IDs and unauthorized roles produce identical opaque denials. The reporting endpoint explicitly records zero real cloud checks, cluster checks and GPU tests. These checks cannot establish that any real provider, workload, namespace or accelerator is configured securely. No real IAM credentials, Kubernetes configuration, runtime access or external side effects are present.
 
-**Metrics and release gates:** negative case coverage (28/28 expected), 26 gate checks including isolation and read-only scope, unauthorized disclosure parity, deterministic outputs, zero network side effects, 81 CTest targets in Debug/Release and an independently confirmed Windows CI run for the exact published commit. Future operational tests require a separately authorized, connected environment, actual configuration evidence, effective IAM/RBAC policy evaluation, admission test results, image signature verification and audit telemetry.
+**Metrics and release gates:** negative case coverage (28/28 expected), 26 gate checks including isolation and read-only scope, unauthorized disclosure parity, deterministic outputs, zero network side effects, 89 CTest targets in Debug/Release and an independently confirmed Windows CI run for the exact published commit. Future operational tests require a separately authorized, connected environment, actual configuration evidence, effective IAM/RBAC policy evaluation, admission test results, image signature verification and audit telemetry.
 
 **Inventory at the infrastructure milestone:** 14 agent + 20 exposure + 17 cross-zone + 26 supply-chain + 22 vector + 24 A2A + 22 threat modeling + 28 infrastructure = **173 synthetic scenarios**; the subsequent 32 MCP tool fixtures and 30 RAG pipeline fixtures brought the **v10 milestone total to 235**. They are modeled safety cases, **not** identified vulnerabilities, production measurements or real exploit outcomes.
 
@@ -795,7 +795,7 @@ Examples (Windows PowerShell terminal, no `.ps1` script required):
 .\out\build\windows-msvc\Release\simulator.exe rag evaluate reviewer same_tenant verified_source consistent_before_retrieval delimited_untrusted redacted_typed
 ```
 
-**Acceptance gates:** 30/30 negative scenario fixtures denied by their identified gate; uniform denial of unauthorized and unknown selectors; approved bounded static retrieval returns no private/other-tenant data; 81/81 CTest targets pass in local Debug and Release and the Windows runner. This **does not prove** that real ingestion, Unicode defenses, contextual prompt injection resistance, hybrid ranking, a vector database, or a live MCP server are secure. No model, database, filesystem source, network service or attacker-controlled artifact is contacted or executed.
+**Acceptance gates:** 30/30 negative scenario fixtures denied by their identified gate; uniform denial of unauthorized and unknown selectors; approved bounded static retrieval returns no private/other-tenant data; 89/89 CTest targets pass in local Debug and Release and the Windows runner. This **does not prove** that real ingestion, Unicode defenses, contextual prompt injection resistance, hybrid ranking, a vector database, or a live MCP server are secure. No model, database, filesystem source, network service or attacker-controlled artifact is contacted or executed.
 
 ## MCP tool boundaries — offline security control model
 
@@ -832,7 +832,7 @@ The 32 negative cases each select one failed policy gate. There are **33 local g
 .\out\build\windows-msvc\Release\simulator.exe mcp report
 ```
 
-**Acceptance criteria:** 32/32 modeled failures denied by their expected gate; authorized local preview allowed without side effects; cross-tenant, untrusted-description, unreviewed-registry and production-mutation cases denied; unknown or unauthorized scenarios return an opaque error. Require 81/81 CTest locally and a successful Windows 2022 CI for this exact revision. Separately, an operational MCP implementation would need real protocol contract tests (initialization, capabilities, `tools/list`, `tools/call`, request-ID handling, input and output schemas), authenticated transport, timeouts, audit and CSP/UI validation before any compatibility or security guarantee.
+**Acceptance criteria:** 32/32 modeled failures denied by their expected gate; authorized local preview allowed without side effects; cross-tenant, untrusted-description, unreviewed-registry and production-mutation cases denied; unknown or unauthorized scenarios return an opaque error. Require 89/89 CTest locally and a successful Windows 2022 CI for this exact revision. Separately, an operational MCP implementation would need real protocol contract tests (initialization, capabilities, `tools/list`, `tools/call`, request-ID handling, input and output schemas), authenticated transport, timeouts, audit and CSP/UI validation before any compatibility or security guarantee.
 
 **Current aggregate:** 14 agent + 20 exposure + 17 cross-zone + 26 supply-chain + 22 vector + 24 A2A + 22 threat model + 28 infrastructure + 32 MCP + 30 RAG + 24 assurance = **259 synthetic scenarios**. These are specifications of a security policy and regression tests, not vulnerabilities discovered, live credentials found or verified deployments.
 
@@ -862,7 +862,41 @@ The fixture lifecycle is: **mission and authorized scope → evidence / hypothes
 .\out\build\windows-msvc\Release\simulator.exe assurance impact reviewer approved_fixture bounded documented unknown_not_invented
 ```
 
-**Release gates:** 24/24 synthetic failure fixtures must deny at the intended gate; unauthorized and unknown selectors receive opaque responses; approved decisions are read-only and carry `network_access:false` and `side_effects:false`; unverified financial impact remains JSON `null`; 81 CTest targets pass both locally and in Windows CI for the exact published commit. Pending: live AI evaluations, real authentication, multi-party policy and responsible-AI review, consistent trace correlation, incident handling, and measurable operational impact.
+**Release gates:** 24/24 synthetic failure fixtures must deny at the intended gate; unauthorized and unknown selectors receive opaque responses; approved decisions are read-only and carry `network_access:false` and `side_effects:false`; unverified financial impact remains JSON `null`; 89 CTest targets pass both locally and in Windows CI for the exact published commit. Pending: live AI evaluations, real authentication, multi-party policy and responsible-AI review, consistent trace correlation, incident handling, and measurable operational impact.
+
+
+## Zimbra collaboration and service boundary — offline model
+
+The historical SpecialAI Zimbra Hosting Proposal #2514 (draft, 2011) and SpecialAI Zimbra SLA are retained **only as private reference material**. They distinguish **hosted** services (customer administration, provider infrastructure support) from **fully managed** services (provider account administration and end-user helpdesk), plus mail, contacts, calendars, document sharing, migration and backup/restore. They do **not** establish current contractual terms or production guarantees for this project. The proposal describes 99.9% *server* availability whereas the separate SLA uses a differently scoped 100% service/network term with exclusions; neither is an achieved measurement or an enforceable commitment by this simulator.
+
+Implemented now: the C++20 `zimbra` command evaluates **9 synthetic negative service-policy scenarios** and static read-only previews for both service plans. Real account administration, helpdesk ticket creation, sending mail, restoring actual mailboxes, downtime measurement, billing and financial credits are **not implemented**. Authorization is deliberately modeled with fixture tokens only; there is no user login, Zimbra installation, network client, calendar service or mailbox storage.
+
+| Boundary | Hosted fixture | Fully managed fixture | Verification status |
+|---|---|---|---|
+| Service health, administrator support | Read-only preview | Read-only preview | Local policy test only |
+| End-user helpdesk, account change | Denied outside hosted scope | Read-only preview only | Local policy test only |
+| Mailbox backup/restore, collaboration | Read-only preview | Read-only preview | No actual restore or sync |
+| Cross-tenant operations, missing approval | Denied | Denied | Static input checks |
+| External mail, billing credit, unsupported SLA claims | Denied / non-operational | Denied / non-operational | No network or financial activity |
+| Message/tool content attempting authority | Denied synthetic fixture | Denied synthetic fixture | No live AI or MIME parser |
+
+### Zimbra fixture CLI (Windows PowerShell)
+
+~~~powershell
+.\out\build\windows-msvc\Release\simulator.exe zimbra list
+.\out\build\windows-msvc\Release\simulator.exe zimbra report
+.\out\build\windows-msvc\Release\simulator.exe zimbra simulate hosted_end_user_helpdesk reviewer
+.\out\build\windows-msvc\Release\simulator.exe zimbra simulate cross_tenant_restore reviewer
+.\out\build\windows-msvc\Release\simulator.exe zimbra evaluate reviewer hosted same_tenant restore_preview approved_read_only
+.\out\build\windows-msvc\Release\simulator.exe zimbra evaluate reviewer managed same_tenant end_user_support_preview approved_read_only
+.\out\build\windows-msvc\Release\simulator.exe zimbra evaluate reviewer hosted same_tenant end_user_support_preview approved_read_only
+~~~
+
+**Release checks:** 9/9 negative cases expected `no_go`; a hosted end-user helpdesk preview denied; reviewer-only, same-tenant, approved read-only previews allowed; unknown and unauthorized IDs denied with opaque responses; `network_access:false` and `side_effects:false` in responses. The native unit includes 71 assertions. The project now contains **89 CTest registrations** (prior 81 plus eight Zimbra tests); require local compilation and the Windows 2022 CI result for the exact published commit. The modeled fixture inventory is now **268** (previous 259 plus nine Zimbra cases), not 268 discovered vulnerabilities.
+
+### AI-300 offline HTML reading checkpoint
+
+The attached `AI-300-Ch1-offline.html` is **156,341,625 bytes**, of which nine embedded image tags account for about 156.3 MB. A bounded byte-offset scan can exclude inline Base64 while preserving HTML text (approximately 41.5 KB). The first reading pass covered the introduction and sections 1.1–1.2: scope-driven AI red teaming, model/agent/RAG/tool trust boundaries, and the importance of defensive telemetry. This material is **reference context**, not an authorization for testing third-party AI services or a finding about this product. No original HTML, embedded images, private documents, or source archives are committed. Subsequent reading passes should use offsets and keep evidence/unknowns separate; do not claim that the whole course was validated from one chapter.
 
 ## Simulator service and collaboration scope
 
@@ -906,7 +940,7 @@ Proposed synthetic scenarios include `scheduled_maintenance`, `urgent_ticket`, `
 | Delivery | requirements, risk review, acceptance gates, tracked metrics | release checklist | planned |
 | Data hygiene | redaction, retention controls, immutable synthetic fixtures | static checks | guideline |
 | Simulation | deterministic fixtures, no external effects, explicit mock markers | side-effect assertions | implemented baseline |
-| AI exposure mapping | gateway, tool schemas, RAG sources, inference metadata and logging surfaces | role-gated synthetic recon inventory; 81 CTest targets total | 20 offline fixtures implemented; live integrations planned |
+| AI exposure mapping | gateway, tool schemas, RAG sources, inference metadata and logging surfaces | role-gated synthetic recon inventory; 89 CTest targets total | 20 offline fixtures implemented; live integrations planned |
 | Vector / embedding privacy | tenant ACL before retrieval, raw-vector export denial, result redaction, probe budgets, pinned model metadata, audit | CTest negative + positive fixtures (22 cases), uniform denial; real vector DB tests pending | Offline C++ gate; real embeddings/RAG planned |
 | AI deployment infrastructure | workload IAM, model storage/serving ACL, credential hygiene, RBAC, Pod Security Admission, GPU isolation, provenance and egress | 28 offline failure scenarios, 26 C++ gates and 9 CTest cases; real cloud checks pending | Offline C++ decision gate only |
 | MCP tool and UI boundary | authenticated per-call identity, qualified tools, schema limits, reviewed descriptions, scoped resources, redacted results, MCP App sandbox/CSP | 32 synthetic failure fixtures + 33 independent local policy gates + 9 CTest targets; protocol conformance pending | Offline C++ gate only; stdio/Streamable HTTP, real host and UI planned |
@@ -933,7 +967,7 @@ All performance and reliability claims must come from measured executions, not a
 
 ## Delivery criteria and release gates
 
-1. Windows x64 Visual Studio 2022/CMake configure, build, CTest green (81 targets including native policy, exposure, cross-zone, supply-chain, vector privacy, multi-agent/A2A, threat modeling and infrastructure hardening fixtures).
+1. Windows x64 Visual Studio 2022/CMake configure, build, CTest green (89 targets including native policy, exposure, cross-zone, supply-chain, vector privacy, multi-agent/A2A, threat modeling and infrastructure hardening fixtures).
 2. Inputs/outputs (including offline reconnaissance fixture inventory) match documented deterministic fixtures across 100 consecutive runs.
 3. Native unknown-tool, malformed-input, oversized-input, untrusted tool-origin, unauthorized write/egress and cross-session policy tests fail closed.
 4. No network effects, secrets or customer information in committed artifacts.
@@ -946,7 +980,7 @@ All performance and reliability claims must come from measured executions, not a
 
 ### Project status as of bootstrap
 
-- Gate 1: Local Debug and Release must pass all 81 CTest targets; Windows 2022 CI must pass against the published commit (check the matching workflow run).
+- Gate 1: Local Debug and Release must pass all 89 CTest targets; Windows 2022 CI must pass against the published commit (check the matching workflow run).
 - Gate 2: not run at scale.
 - Gate 3: native runtime checks and negative agent-policy, multi-agent and A2A fixture tests included; complete security coverage, MCP conformance and real agent injection resistance not claimed.
 - Gate 4: repository content screened for private reference files; this is not a formal secret-scanning attestation.
