@@ -51,6 +51,13 @@ class OfflineDesktopSourceTests(unittest.TestCase):
         self.assertIn("WEBVIEW2_SDK_DIR", cmake)
         self.assertIn("copy_directory", cmake)
 
+    def test_github_pages_reuses_the_same_favicon(self):
+        head = (ROOT / "_includes" / "head-custom.html").read_text(encoding="utf-8")
+        self.assertIn('rel="icon"', head)
+        self.assertIn("{{ '/ui/favicon.ico' | relative_url }}", head)
+        self.assertNotIn("http://", head)
+        self.assertNotIn("https://", head)
+
 
 if __name__ == "__main__":
     unittest.main()
