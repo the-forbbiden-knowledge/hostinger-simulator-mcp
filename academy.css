@@ -1,0 +1,324 @@
+/* Static academy content only — no original header, banner or footer. */
+:root { --geist-background: #fff; --geist-foreground: #000;
+  --triangle-scan-duration: 4.8s; --triangle-flash-duration: 3.2s;
+  --triangle-precession-duration: 6.4s; --triangle-hover-duration: 2.4s;
+  color-scheme: light; }
+*, *::before, *::after { box-sizing: border-box; }
+html { background: #fff; color: #111; scroll-behavior: smooth; }
+body { margin: 0; background: #fff; font-family: Arial, Helvetica, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+.academy-content { max-width: 1200px; min-height: 100vh; margin: 0 auto; border: 1px solid #eaeaea; border-top: 0; border-bottom: 0; }
+.grid-spacer { display: grid; grid-template-columns: repeat(12, 1fr); border-top: 1px solid #eaeaea; border-bottom: 1px solid #eaeaea; }
+.grid-spacer span { aspect-ratio: 1; border-right: 1px solid #eaeaea; }
+.grid-spacer span:last-child { border-right: 0; }
+.academy-intro { display: grid; grid-template-columns: 1fr 10fr 1fr; }
+.intro-sidebar { border-right: 1px solid #eaeaea; }
+.intro-sidebar:last-child { border-left: 1px solid #eaeaea; border-right: 0; }
+.intro-center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 96px 32px; min-height: 460px; }
+.hero-brand-mark { display: block; width: min(150px, 42vw); height: auto; flex: none; }
+h1 { font-size: clamp(30px, 4.5vw, 60px); letter-spacing: -.045em; line-height: 1.14; font-weight: 650; margin: 32px 0 16px; }
+.manifesto { max-width: 530px; width: 100%; margin: 0; font-size: clamp(16px, 1.6vw, 20px); line-height: 1.6; color: #666; text-wrap: pretty; }
+.academy-courses { display: grid; grid-template-columns: 1fr 3fr 7fr 1fr; border-bottom: 1px solid #eaeaea; }
+.courses-gutter:first-child { border-right: 1px solid #eaeaea; }
+.courses-gutter:last-child { border-left: 1px solid #eaeaea; }
+.courses-heading { padding: 32px; border-right: 1px solid #eaeaea; }
+h2 { font-size: clamp(25px, 3vw, 36px); font-weight: 650; letter-spacing: -.035em; margin: 0; }
+.course-card { display: grid; align-content: center; gap: 10px; padding: 32px; }
+h3 { font-size: clamp(18px, 2vw, 24px); font-weight: 650; line-height: 1.35; letter-spacing: -.02em; margin: 0; }
+.course-card p { font-size: 16px; line-height: 1.65; color: #666; margin: 0; text-wrap: pretty; }
+@media(max-width: 800px) {
+ .intro-center { padding: 72px 24px; min-height: 380px; }
+ .academy-courses { grid-template-columns: 1fr; }
+ .courses-gutter { display: none; }
+ .courses-heading { border-right: 0; border-bottom: 1px solid #eaeaea; padding: 28px 24px 18px; }
+ .course-card { padding: 28px 24px 36px; }
+}
+@media(max-width: 480px) {
+ .intro-center { padding: 64px 18px; min-height: 330px; }
+ .manifesto { line-height: 1.6; }
+}
+
+.footer-brand-mark,
+.hero-brand-mark {
+    -webkit-mask-image: linear-gradient(
+        105deg,
+        transparent 0%,
+        #000 8%,
+        #000 38%,
+        rgba(0, 0, 0, 0.18) 50%,
+        #000 62%,
+        #000 92%,
+        transparent 100%
+    );
+    mask-image: linear-gradient(
+        105deg,
+        transparent 0%,
+        #000 8%,
+        #000 38%,
+        rgba(0, 0, 0, 0.18) 50%,
+        #000 62%,
+        #000 92%,
+        transparent 100%
+    );
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
+    -webkit-mask-size: 300% 100%;
+    mask-size: 300% 100%;
+    animation: brand-fade-scan var(--triangle-scan-duration, 4.8s) ease-in-out infinite;
+    will-change: -webkit-mask-position, mask-position;
+}
+
+.footer-brand-mark:hover,
+.hero-brand-mark:hover {
+    animation-duration: var(--triangle-hover-duration, 2.4s);
+}
+
+html.light-theme .hero-brand-mark,
+html.light-theme .hero-brand-mark:hover {
+    animation:
+        brand-fade-scan var(--triangle-scan-duration, 4.8s) ease-in-out infinite,
+        academy-hero-coriolis-flash var(--triangle-flash-duration, 3.2s) steps(1, end) infinite,
+        academy-hero-coriolis-precession var(--triangle-precession-duration, 6.4s) ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+    will-change: -webkit-mask-position, mask-position, filter, transform;
+}
+
+html[data-triangle-effect="off"] .hero-brand-mark {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    animation: none !important;
+    filter: none !important;
+    transform: none !important;
+    will-change: auto !important;
+}
+
+html[data-triangle-effect="on"][data-triangle-flashes="off"].light-theme .hero-brand-mark,
+html[data-triangle-effect="on"][data-triangle-flashes="off"].light-theme .hero-brand-mark:hover {
+    animation:
+        brand-fade-scan var(--triangle-scan-duration, 4.8s) ease-in-out infinite,
+        academy-hero-coriolis-precession var(--triangle-precession-duration, 6.4s) ease-in-out infinite;
+}
+
+html.dark-theme .hero-brand-mark {
+    -webkit-mask-image: none;
+    mask-image: none;
+    animation: none;
+    will-change: auto;
+}
+
+#header-wrapper a[data-testid="header/navbar/logo"].vercel-logo {
+    -webkit-mask-image: none;
+    mask-image: none;
+    animation: none;
+    will-change: auto;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    #header-wrapper a[data-testid="header/navbar/logo"].vercel-logo:hover,
+    html.dark-theme .hero-brand-mark:hover {
+        -webkit-mask-image: linear-gradient(
+            105deg,
+            transparent 0%,
+            #000 8%,
+            #000 38%,
+            rgba(0, 0, 0, 0.18) 50%,
+            #000 62%,
+            #000 92%,
+            transparent 100%
+        );
+        mask-image: linear-gradient(
+            105deg,
+            transparent 0%,
+            #000 8%,
+            #000 38%,
+            rgba(0, 0, 0, 0.18) 50%,
+            #000 62%,
+            #000 92%,
+            transparent 100%
+        );
+        -webkit-mask-position: 100% 0;
+        mask-position: 100% 0;
+        -webkit-mask-size: 300% 100%;
+        mask-size: 300% 100%;
+        animation: brand-fade-scan 2.4s ease-in-out 1;
+        will-change: -webkit-mask-position, mask-position;
+    }
+
+    body[data-page="docs"]
+        [data-sidebar-nav="true"]
+        span[class~="text-heading-14"][data-docs-brand-snap="true"] {
+        -webkit-mask-image: linear-gradient(
+            105deg,
+            rgba(0, 0, 0, 0.58) 0%,
+            #000 8%,
+            #000 38%,
+            rgba(0, 0, 0, 0.72) 50%,
+            #000 62%,
+            #000 92%,
+            rgba(0, 0, 0, 0.58) 100%
+        );
+        mask-image: linear-gradient(
+            105deg,
+            rgba(0, 0, 0, 0.58) 0%,
+            #000 8%,
+            #000 38%,
+            rgba(0, 0, 0, 0.72) 50%,
+            #000 62%,
+            #000 92%,
+            rgba(0, 0, 0, 0.58) 100%
+        );
+        -webkit-mask-position: 100% 0;
+        mask-position: 100% 0;
+        -webkit-mask-size: 300% 100%;
+        mask-size: 300% 100%;
+    }
+
+    body[data-page="docs"]
+        [data-sidebar-nav="true"]
+        span[class~="text-heading-14"][data-docs-brand-snap="true"] {
+        animation: brand-fade-scan 280ms cubic-bezier(0.2, 0.9, 0.2, 1) 1;
+        will-change: -webkit-mask-position, mask-position;
+    }
+
+}
+
+html[data-triangle-effect="on"].dark-theme .hero-brand-mark,
+html[data-triangle-effect="on"].dark-theme .hero-brand-mark:hover {
+    -webkit-mask-image: linear-gradient(
+        105deg,
+        transparent 0%,
+        #000 8%,
+        #000 38%,
+        rgba(0, 0, 0, 0.18) 50%,
+        #000 62%,
+        #000 92%,
+        transparent 100%
+    );
+    mask-image: linear-gradient(
+        105deg,
+        transparent 0%,
+        #000 8%,
+        #000 38%,
+        rgba(0, 0, 0, 0.18) 50%,
+        #000 62%,
+        #000 92%,
+        transparent 100%
+    );
+    -webkit-mask-position: 100% 0;
+    mask-position: 100% 0;
+    -webkit-mask-size: 300% 100%;
+    mask-size: 300% 100%;
+    animation:
+        brand-fade-scan var(--triangle-scan-duration, 4.8s) ease-in-out infinite,
+        academy-hero-coriolis-flash var(--triangle-flash-duration, 3.2s) steps(1, end) infinite,
+        academy-hero-coriolis-precession var(--triangle-precession-duration, 6.4s) ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+    will-change: -webkit-mask-position, mask-position, filter, transform;
+}
+
+html[data-triangle-effect="on"][data-triangle-flashes="off"].dark-theme .hero-brand-mark,
+html[data-triangle-effect="on"][data-triangle-flashes="off"].dark-theme .hero-brand-mark:hover {
+    animation:
+        brand-fade-scan var(--triangle-scan-duration, 4.8s) ease-in-out infinite,
+        academy-hero-coriolis-precession var(--triangle-precession-duration, 6.4s) ease-in-out infinite;
+}
+
+@keyframes brand-fade-scan {
+    0%,
+    100% {
+        -webkit-mask-position: 100% 0;
+        mask-position: 100% 0;
+    }
+
+    50% {
+        -webkit-mask-position: 0% 0;
+        mask-position: 0% 0;
+    }
+}
+
+@keyframes academy-hero-coriolis-flash {
+    0%,
+    6%,
+    11%,
+    25%,
+    42%,
+    58%,
+    64%,
+    81%,
+    96%,
+    100% {
+        filter: none;
+    }
+
+    3% {
+        filter: brightness(0) invert(1)
+            drop-shadow(7px -3px 5px rgba(255, 255, 255, 0.98))
+            drop-shadow(-3px 7px 11px rgba(255, 255, 255, 0.72));
+    }
+
+    9% {
+        filter: brightness(0) invert(1)
+            drop-shadow(2px 8px 6px rgba(255, 255, 255, 0.94))
+            drop-shadow(-7px -2px 9px rgba(255, 255, 255, 0.62));
+    }
+
+    22% {
+        filter: brightness(0) invert(1)
+            drop-shadow(-8px 2px 7px rgba(255, 255, 255, 0.98))
+            drop-shadow(3px -7px 12px rgba(255, 255, 255, 0.7));
+    }
+
+    39% {
+        filter: brightness(0) invert(1)
+            drop-shadow(-3px -8px 5px rgba(255, 255, 255, 0.9))
+            drop-shadow(8px 3px 10px rgba(255, 255, 255, 0.64));
+    }
+
+    55% {
+        filter: brightness(0) invert(1)
+            drop-shadow(8px 4px 7px rgba(255, 255, 255, 1))
+            drop-shadow(-4px -8px 12px rgba(255, 255, 255, 0.74));
+    }
+
+    61% {
+        filter: brightness(0) invert(1)
+            drop-shadow(-2px 8px 5px rgba(255, 255, 255, 0.92))
+            drop-shadow(7px -3px 9px rgba(255, 255, 255, 0.6));
+    }
+
+    78% {
+        filter: brightness(0) invert(1)
+            drop-shadow(-8px -3px 7px rgba(255, 255, 255, 0.98))
+            drop-shadow(4px 8px 11px rgba(255, 255, 255, 0.68));
+    }
+
+    94% {
+        filter: brightness(0) invert(1)
+            drop-shadow(3px -8px 6px rgba(255, 255, 255, 0.94))
+            drop-shadow(-7px 3px 10px rgba(255, 255, 255, 0.66));
+    }
+}
+
+@keyframes academy-hero-coriolis-precession {
+    0%,
+    100% {
+        transform: translate3d(-1px, 0, 0) rotate(-0.8deg) scale(0.995);
+    }
+
+    25% {
+        transform: translate3d(0, -1px, 0) rotate(0.35deg) scale(1.005);
+    }
+
+    50% {
+        transform: translate3d(1px, 0, 0) rotate(0.8deg) scale(1.01);
+    }
+
+    75% {
+        transform: translate3d(0, 1px, 0) rotate(-0.35deg) scale(1.005);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-brand-mark, .hero-brand-mark:hover { animation: none !important; -webkit-mask-position: 50% 0; mask-position: 50% 0; transform: none !important; filter: none !important; }
+}
