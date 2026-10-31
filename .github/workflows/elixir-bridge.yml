@@ -21,6 +21,10 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest discover -s tests -p 'test_operational_evidence_gate.py' -v
+      - name: Validate offline authorization contract (synthetic)
+        run: |
+          set -euo pipefail
+          python3 -W error::ResourceWarning -m unittest discover -s tests -p 'test_offline_*.py' -v
       - name: Setup Erlang and Elixir
         uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:

@@ -23,6 +23,10 @@ jobs:
         run: |
           python -m unittest discover -s tests -p "test_operational_evidence_gate.py" -v
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Validate offline authorization contract (synthetic)
+        run: |
+          python -W error::ResourceWarning -m unittest discover -s tests -p "test_offline_*.py" -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Configure
         run: cmake --preset windows-msvc
       - name: Build
