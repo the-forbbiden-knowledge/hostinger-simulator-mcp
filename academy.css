@@ -1,6 +1,6 @@
 /* Static academy content only — no original header, banner or footer. */
 :root { --geist-background: #fff; --geist-foreground: #000;
-  --triangle-scan-duration: 4.8s; --triangle-hover-duration: 2.4s;
+  --triangle-scan-duration: 4.8s; --triangle-precession-duration: 6.4s;
   color-scheme: light; }
 *, *::before, *::after { box-sizing: border-box; }
 html { background: #fff; color: #111; scroll-behavior: smooth; }
@@ -49,12 +49,12 @@ h1 { font-size: clamp(30px, 4.5vw, 60px); letter-spacing: -.045em; line-height: 
     mask-position: 100% 0;
     -webkit-mask-size: 300% 100%;
     mask-size: 300% 100%;
-    animation: brand-fade-scan var(--triangle-scan-duration, 4.8s) ease-in-out infinite;
-    will-change: -webkit-mask-position, mask-position;
-}
-
-.hero-brand-mark:hover {
-    animation-duration: var(--triangle-hover-duration, 2.4s);
+    animation:
+        brand-fade-scan var(--triangle-scan-duration, 4.8s) ease-in-out infinite,
+        academy-hero-coriolis-precession var(--triangle-precession-duration, 6.4s) ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+    will-change: -webkit-mask-position, mask-position, transform;
 }
 
 @keyframes brand-fade-scan {
@@ -67,6 +67,25 @@ h1 { font-size: clamp(30px, 4.5vw, 60px); letter-spacing: -.045em; line-height: 
     50% {
         -webkit-mask-position: 0% 0;
         mask-position: 0% 0;
+    }
+}
+
+@keyframes academy-hero-coriolis-precession {
+    0%,
+    100% {
+        transform: translate3d(-1px, 0, 0) rotate(-0.8deg) scale(0.995);
+    }
+
+    25% {
+        transform: translate3d(0, -1px, 0) rotate(0.35deg) scale(1.005);
+    }
+
+    50% {
+        transform: translate3d(1px, 0, 0) rotate(0.8deg) scale(1.01);
+    }
+
+    75% {
+        transform: translate3d(0, 1px, 0) rotate(-0.35deg) scale(1.005);
     }
 }
 

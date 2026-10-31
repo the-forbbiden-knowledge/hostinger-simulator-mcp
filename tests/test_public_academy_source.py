@@ -17,16 +17,24 @@ class PublicAcademyTests(unittest.TestCase):
         self.assertIn('class="light-theme"', html)
         self.assertIn('name="color-scheme" content="light"', html)
 
-    def test_original_triangle_has_only_continuous_sweep(self):
+    def test_original_triangle_sweep_and_sway_without_flashes(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         css = (ROOT / "academy.css").read_text(encoding="utf-8")
         self.assertEqual(html.count("<path "), 16)
         self.assertIn('d="M485 650.4h230L600 451.21z"', html)
-        for selector in ("brand-fade-scan", ".hero-brand-mark", "animation:", "mask-position:"):
+        for selector in (
+            "brand-fade-scan",
+            "academy-hero-coriolis-precession",
+            "--triangle-scan-duration: 4.8s",
+            "--triangle-precession-duration: 6.4s",
+            "translate3d(-1px, 0, 0) rotate(-0.8deg) scale(0.995)",
+            "translate3d(1px, 0, 0) rotate(0.8deg) scale(1.01)",
+            ".hero-brand-mark", "animation:", "mask-position:",
+            "transform-origin: center", "prefers-reduced-motion: reduce",
+        ):
             with self.subTest(selector=selector):
                 self.assertIn(selector, css)
-        for removed in ("academy-hero-coriolis-flash", "academy-hero-coriolis-precession",
-                        "steps(1, end)", "drop-shadow("):
+        for removed in ("academy-hero-coriolis-flash", "steps(1, end)", "drop-shadow(", "brightness(0)"):
             with self.subTest(removed=removed):
                 self.assertNotIn(removed, css)
         self.assertIn('data-triangle-effect="on"', html)
