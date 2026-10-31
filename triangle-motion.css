@@ -1,0 +1,8 @@
+/* The source project's original two animations; the flashing animation is intentionally excluded. */
+html .hero-brand-mark, html .hero-brand-mark:hover {
+  animation: brand-fade-scan 4.8s ease-in-out infinite,
+    academy-hero-coriolis-precession 6.4s ease-in-out infinite !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html .hero-brand-mark, html .hero-brand-mark:hover { animation: none !important; }
+}

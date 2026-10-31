@@ -1,75 +1,61 @@
-"""Public academy homepage regression: content-only layout and unchanged triangle."""
+"""Original academy source integrity and sanctioned public homepage substitutions."""
 import hashlib
-from pathlib import Path
 import re
+from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+HTML = (ROOT / "index.html").read_bytes()
 
 
-class PublicAcademyTests(unittest.TestCase):
-    def test_only_the_requested_main_content_is_present(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
-        self.assertIn('<main class="academy-content"', html)
-        self.assertIn('class="site-header"', html)
-        self.assertIn('class="site-footer"', html)
-        self.assertNotIn('data-profile-banner', html)
-        self.assertIn('id="ai-template"', html)
-        self.assertIn('id="docs-template"', html)
-        self.assertIn('class="light-theme"', html)
-        self.assertIn('name="color-scheme" content="light dark"', html)
+def span(start, end):
+    a = HTML.index(start)
+    return HTML[a:HTML.index(end, a) + len(end)]
 
-    def test_original_triangle_sweep_and_sway_without_flashes(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
-        css = (ROOT / "academy.css").read_text(encoding="utf-8")
-        hero = re.search(r'<svg[^>]*class="hero-brand-mark"[^>]*>(.*?)</svg>', html, re.S)
+
+class OriginalAcademySourceTests(unittest.TestCase):
+    def test_banner_byte_for_byte_identical_to_user_archive(self):
+        banner = span(b'<aside class="flex z-30', b'</aside>')
+        self.assertEqual(len(banner), 2048)
+        self.assertEqual(hashlib.sha256(banner).hexdigest(),
+                         "a86d41a0c56b561f63bea5b3643e7c381a7e2d212def298f20dcfea919697825")
+
+    def test_original_header_unmodified(self):
+        header = span(b'<header class=', b'</header>')
+        self.assertEqual(hashlib.sha256(header).hexdigest(),
+                         "d3087318b9f3b37e407ff588af09260abd8beec93dd47deb99f1eb4f9f187468")
+        self.assertIn(b'navigation-menu_root__HT1ea', header)
+        self.assertIn(b'aria-label="Op', header)
+
+    def test_original_grid_and_project_only_copy_change(self):
+        html = HTML.decode("utf-8")
+        self.assertIn('>Projeto</h2>', html)
+        self.assertIn('>Hostinger Simulator MCP</h3>', html)
+        self.assertIn('src="public-original.js"', html)
+        self.assertIn('href="triangle-motion.css"', html)
+        self.assertIn('href="ui/favicon.ico"', html)
+        self.assertNotIn('Como importar e exportar cookies com o Cookie Editor', html)
+        self.assertNotIn('src="/src/js/site.js', html)
+        self.assertIn('light-theme', html)
+
+    def test_original_triangle_svg_preserved(self):
+        html = HTML.decode("utf-8")
+        hero = re.search(r'<svg[^>]+class="triangle-module__d-3XEG__triangle hero-brand-mark"[^>]*>(.*?)</svg>', html, re.S)
         self.assertIsNotNone(hero)
         self.assertEqual(hero.group(1).count("<path "), 16)
-        self.assertIn('d="M485 650.4h230L600 451.21z"', html)
-        for selector in (
-            "brand-fade-scan",
-            "academy-hero-coriolis-precession",
-            "--triangle-scan-duration: 4.8s",
-            "--triangle-precession-duration: 6.4s",
-            "translate3d(-1px, 0, 0) rotate(-0.8deg) scale(0.995)",
-            "translate3d(1px, 0, 0) rotate(0.8deg) scale(1.01)",
-            ".hero-brand-mark", "animation:", "mask-position:",
-            "transform-origin: center", "prefers-reduced-motion: reduce",
-        ):
-            with self.subTest(selector=selector):
-                self.assertIn(selector, css)
-        for removed in ("academy-hero-coriolis-flash", "steps(1, end)", "drop-shadow(", "brightness(0)"):
-            with self.subTest(removed=removed):
-                self.assertNotIn(removed, css)
-        self.assertIn('data-triangle-effect="on"', html)
-        self.assertIn('data-triangle-flashes="off"', html)
+        css = (ROOT / "triangle-motion.css").read_text("utf-8")
+        self.assertIn("brand-fade-scan", css)
+        self.assertIn("academy-hero-coriolis-precession", css)
+        self.assertNotIn("academy-hero-coriolis-flash", css)
+        self.assertIn("prefers-reduced-motion", css)
 
-    def test_central_copy_without_courses_and_original_site_title(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
-        css = (ROOT / "academy.css").read_text(encoding="utf-8")
-        self.assertIn("<h1 id=\"academy-title\">A Elite Estrangeira</h1>", html)
-        self.assertIn("Nós sabemos o que somos, onde podemos chegar e o que podemos realizar.", html)
-        self.assertIn("Trazendo a verdadeira luz do conhecimento àqueles capazes de questionar o suficiente para buscá-la.", html)
-        self.assertIn("<title>Hostinger Simulator - Windows Native Core + Elixir/OTP | hostinger-simulator-mcp</title>", html)
-        self.assertNotIn("Cookie Editor", html)
-        self.assertNotIn("courses-title", html)
-        self.assertNotIn("academy-courses", html)
-        self.assertNotIn("course-card", html)
-        self.assertNotIn(".academy-courses", css)
-        self.assertNotIn(".course-card", css)
-
-    def test_original_icon_reused_without_new_private_assets(self):
-        html = (ROOT / "index.html").read_text(encoding="utf-8")
-        self.assertIn('href="ui/favicon.ico"', html)
-        self.assertEqual(
-            hashlib.sha256((ROOT / "ui" / "favicon.ico").read_bytes()).hexdigest(),
-            "1a2fcbd95a4fcc84259a43e04c23478020927104981014dd30607277b8fafe9c",
-        )
-        self.assertNotRegex(html, r'(?:href|src)="http://')
-        self.assertEqual(set(re.findall(r'https://([^/"\\s]+)', html)), {"github.com"})
-        css = (ROOT / "academy.css").read_text(encoding="utf-8")
-        self.assertNotIn("@import", css)
-        self.assertNotIn("url(", css)
+    def test_original_core_styles_and_icon_not_modified(self):
+        self.assertEqual(hashlib.sha256((ROOT / "src/css/site.css").read_bytes()).hexdigest(),
+                         "445a589e7b28abc4ab6d004bacb06e1cad869bade4fdd5bde41f5348029ba3c5")
+        self.assertEqual(hashlib.sha256((ROOT / "src/css/742a1c022f0bfbbe.css").read_bytes()).hexdigest(),
+                         "d7862c5b6ba53289872c61909574c4fafffeff7a73bcc1e5ed77a6050550222d")
+        self.assertEqual(hashlib.sha256((ROOT / "ui/favicon.ico").read_bytes()).hexdigest(),
+                         "1a2fcbd95a4fcc84259a43e04c23478020927104981014dd30607277b8fafe9c")
 
 
 if __name__ == "__main__":

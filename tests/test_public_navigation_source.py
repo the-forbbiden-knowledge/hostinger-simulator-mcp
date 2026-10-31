@@ -1,60 +1,48 @@
-"""Checks for navigation, modal affordances, and public GitHub Pages boundaries."""
-import base64
-import hashlib
+"""Original header menus, public-only mode and footer shape."""
 from pathlib import Path
 import re
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+HTML = (ROOT / "index.html").read_text(encoding="utf-8")
+JS = (ROOT / "public-original.js").read_text(encoding="utf-8")
 
 
-class PublicNavigationTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.html = (ROOT / "index.html").read_text(encoding="utf-8")
+class PublicOriginalNavigationTests(unittest.TestCase):
+    def test_actual_original_navigation_not_a_replacement(self):
+        self.assertIn('class="navigation-menu_root__HT1ea"', HTML)
+        for label in ("Produtos", "Recursos", "Soluções", "Empresas", "Preços"):
+            self.assertIn(label, HTML)
+        for identity in ('data-geist-menu-button', 'aria-label="Pergunte à IA"',
+                         'cmdklaunch_launcher__f9k1l'):
+            self.assertIn(identity, HTML)
+        self.assertIn("07-desktop-navigation", JS)
+        self.assertIn("06-academy-command", JS)
+        self.assertIn("10-profile-menu", JS)
+        self.assertIn("11-ask-ai", JS)
 
-    def test_three_navigation_panels_and_fixed_empty_slots(self):
-        html = self.html
-        for name in ("Produtos", "Recursos", "Soluções"):
-            self.assertIn('id="menu-' + name + '"', html)
-        self.assertEqual(html.count('class="nav-column"'), 9)
-        self.assertEqual(html.count('class="nav-item"'), 27)
-        self.assertEqual(html.count('class="nav-slot-empty"'), 18)
-        self.assertIn('grid-template-rows:repeat(5,62px)', html)
-        self.assertIn('aria-expanded="false"', html)
-        self.assertIn('class="mobile-menu"', html)
+    def test_original_footer_five_categories_plus_triangle(self):
+        start = HTML.index('<footer class=')
+        end = HTML.index('</footer>', start)
+        footer = HTML[start:end]
+        categories = re.findall(r'<h2 class="font-mono uppercase [^"]+">([^<]+)</h2>', footer)
+        self.assertEqual(categories, ["Primeiros passos", "Investigar", "Monitorar",
+                                      "Plataforma", "Recursos"])
+        self.assertIn('aria-label="Chefes logo"', footer)
+        self.assertIn('aria-label="sistema"', footer)
+        self.assertIn('aria-label="claro"', footer)
+        self.assertIn('aria-label="escuro"', footer)
 
-    def test_footer_and_light_theme_selector(self):
-        html = self.html
-        self.assertEqual(html.count('class="foot-col"'), 5)
-        self.assertIn('class="foot-col foot-brand"', html)
-        self.assertIn('class="theme-switcher"', html)
-        for value in ("system", "light", "dark"):
-            self.assertIn('name="site-theme" value="' + value + '"', html)
-        self.assertIn('Ambiente de simulação', html)
-
-    def test_modal_triggers_do_not_link_to_private_pages(self):
-        html = self.html
-        for token in ('id="ai-template"', 'id="docs-template"', 'id="account-template"',
-                      'data-account-action="entrar"', 'data-account-action="cadastro"',
-                      'aria-modal="true"', 'id="docs-query"', 'id="ai-question"'):
-            self.assertIn(token, html)
-        for denied in ('href="/login', 'href="/signup', 'fetch(', 'XMLHttpRequest',
-                       'api.groq.com', 'config/groq-api.key', 'electron/'):
-            self.assertNotIn(denied, html)
-
-    def test_inline_script_and_style_are_csp_hash_restricted(self):
-        html = self.html
-        policy = re.search(r'<meta http-equiv="Content-Security-Policy" content="([^"]+)"', html).group(1)
-        for tag in ("style", "script"):
-            contents = re.findall("<" + tag + r">(.*?)</" + tag + ">", html, re.S)
-            self.assertEqual(len(contents), 1)
-            digest = base64.b64encode(hashlib.sha256(contents[0].encode("utf-8")).digest()).decode()
-            self.assertIn("'sha256-" + digest + "'", policy)
-        self.assertIn("connect-src 'none'", policy)
-        self.assertIn("form-action 'none'", policy)
-        self.assertNotIn("unsafe-inline", policy)
-        self.assertNotIn("unsafe-eval", policy)
+    def test_original_modals_have_no_live_backend(self):
+        self.assertIn('data-ask-ai-panel', HTML)
+        self.assertIn('connect-src &#39;none&#39;', HTML.replace("'", "&#39;"))
+        self.assertNotIn('fetch(', JS)
+        self.assertNotIn('XMLHttpRequest', JS)
+        self.assertNotIn('http://127.0.0.1', JS)
+        self.assertIn('Sem IA conectada', JS)
+        self.assertNotIn('data-profile-banner\x3d\x22hidden', HTML)
+        self.assertFalse((ROOT / "login.html").exists())
+        self.assertFalse((ROOT / "signup.html").exists())
 
 
 if __name__ == "__main__":
