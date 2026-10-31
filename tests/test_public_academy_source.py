@@ -11,16 +11,20 @@ class PublicAcademyTests(unittest.TestCase):
     def test_only_the_requested_main_content_is_present(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn('<main class="academy-content"', html)
-        self.assertNotRegex(html, r"<(?:header|footer|nav|aside)\\b")
+        self.assertIn('class="site-header"', html)
+        self.assertIn('class="site-footer"', html)
         self.assertNotIn('data-profile-banner', html)
-        self.assertNotRegex(html, r"<script\\b")
+        self.assertIn('id="ai-template"', html)
+        self.assertIn('id="docs-template"', html)
         self.assertIn('class="light-theme"', html)
-        self.assertIn('name="color-scheme" content="light"', html)
+        self.assertIn('name="color-scheme" content="light dark"', html)
 
     def test_original_triangle_sweep_and_sway_without_flashes(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         css = (ROOT / "academy.css").read_text(encoding="utf-8")
-        self.assertEqual(html.count("<path "), 16)
+        hero = re.search(r'<svg[^>]*class="hero-brand-mark"[^>]*>(.*?)</svg>', html, re.S)
+        self.assertIsNotNone(hero)
+        self.assertEqual(hero.group(1).count("<path "), 16)
         self.assertIn('d="M485 650.4h230L600 451.21z"', html)
         for selector in (
             "brand-fade-scan",
@@ -61,8 +65,8 @@ class PublicAcademyTests(unittest.TestCase):
             hashlib.sha256((ROOT / "ui" / "favicon.ico").read_bytes()).hexdigest(),
             "1a2fcbd95a4fcc84259a43e04c23478020927104981014dd30607277b8fafe9c",
         )
-        self.assertNotIn("http://", html)
-        self.assertNotIn("https://", html)
+        self.assertNotRegex(html, r'(?:href|src)="http://')
+        self.assertEqual(set(re.findall(r'https://([^/"\\s]+)', html)), {"github.com"})
         css = (ROOT / "academy.css").read_text(encoding="utf-8")
         self.assertNotIn("@import", css)
         self.assertNotIn("url(", css)

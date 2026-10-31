@@ -27,8 +27,12 @@ jobs:
         run: |
           python -W error::ResourceWarning -m unittest discover -s tests -p "test_offline_*.py" -v
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Verify academy-only public homepage and preserved triangle
-        run: python -m unittest discover -s tests -p "test_public_academy_source.py" -v
+      - name: Verify public homepage, original triangle and site navigation
+        run: |
+          python -m unittest discover -s tests -p "test_public_academy_source.py" -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s tests -p "test_public_navigation_source.py" -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify local-only WebView2 source boundaries and supplied icon
         run: python -m unittest discover -s tests -p "test_offline_desktop_source.py" -v
       - name: Configure
