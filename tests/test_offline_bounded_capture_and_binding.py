@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
@@ -132,7 +133,12 @@ class PinnedBinaryTests(unittest.TestCase):
         self.assertEqual(result.disposition,'REJECT_UNPINNED_BINARY')
 
     def test_wrong_sha256_does_not_start(self):
+        # On Unix, sys.executable may be a symlink, which must fail at the
+        # earlier symlink check. Use a regular fixture to test digest mismatch.
         args=['a2a','delegate','operator','same_tenant','same_session','read_only','approved']
-        result=invoke_fixture(Path(sys.executable),args,channel='a2a',intent='operation',
-                              binary_sha256='0'*64)
+        with tempfile.TemporaryDirectory() as folder:
+            fixture = Path(folder) / 'synthetic_binary_bytes'
+            fixture.write_bytes(b'synthetic regular-file fixture, never execute')
+            result=invoke_fixture(fixture,args,channel='a2a',intent='operation',
+                                  binary_sha256='0'*64)
         self.assertEqual(result.disposition,'REJECT_BINARY_MISMATCH')
