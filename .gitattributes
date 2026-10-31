@@ -2,3 +2,11 @@
 *.pdf binary
 *.zip binary
 .githooks/* text eol=lf
+
+# Preserve the exact original public source bytes on Windows checkouts.
+# GitHub Actions on windows-latest must not convert these LF bytes into CRLF.
+/index.html -text
+/src/css/*.css -text
+/src/fonts/*.woff2 binary
+/public-original.js -text
+/triangle-motion.css -text

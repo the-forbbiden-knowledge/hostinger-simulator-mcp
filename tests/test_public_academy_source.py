@@ -49,6 +49,17 @@ class OriginalAcademySourceTests(unittest.TestCase):
         self.assertNotIn("academy-hero-coriolis-flash", css)
         self.assertIn("prefers-reduced-motion", css)
 
+    def test_original_assets_declared_without_checkout_newline_conversion(self):
+        # A Windows runner may use core.autocrlf=true; these files have byte-level
+        # SHA-256 contracts that require identical checkout bytes on all runners.
+        attrs = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        for rule in (
+            "/index.html -text", "/src/css/*.css -text",
+            "/public-original.js -text", "/triangle-motion.css -text",
+        ):
+            with self.subTest(rule=rule):
+                self.assertIn(rule, attrs.splitlines())
+
     def test_original_core_styles_and_icon_not_modified(self):
         self.assertEqual(hashlib.sha256((ROOT / "src/css/site.css").read_bytes()).hexdigest(),
                          "445a589e7b28abc4ab6d004bacb06e1cad869bade4fdd5bde41f5348029ba3c5")
