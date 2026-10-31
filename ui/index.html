@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'; frame-src 'none'">
+  <meta name="color-scheme" content="dark">
+  <title>Hostinger Simulator — Offline Preview</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img src="favicon.ico" alt="" width="36" height="36">
+      <div><strong>Hostinger Simulator</strong><small>Windows native · WebView2</small></div>
+    </div>
+    <span class="mode">OFFLINE / SYNTHETIC</span>
+  </header>
+  <main>
+    <section class="hero">
+      <div><p class="eyebrow">LOCAL SERVICE LAB</p>
+        <h1>Infrastructure &amp; collaboration preview</h1>
+        <p class="lede">Interface local de consulta para fixtures hipotéticos. Nenhum provedor, servidor de e-mail, sistema financeiro, DNS ou hypervisor está conectado.</p>
+      </div>
+      <aside class="invariants">
+        <div><span class="dot"></span> No production services</div>
+        <code>network_access: false</code>
+        <code>side_effects: false</code>
+      </aside>
+    </section>
+    <section aria-label="Resumo" class="stats">
+      <article><span>Domínios simulados</span><strong>10</strong><small>Somente pré-visualização</small></article>
+      <article><span>Políticas de serviço</span><strong>9</strong><small>Cenários determinísticos</small></article>
+      <article><span>Planos</span><strong>02</strong><small>Hosted · Fully managed</small></article>
+      <article><span>Execução real</span><strong>0</strong><small>Sem efeitos externos</small></article>
+    </section>
+    <div class="content">
+      <section class="panel">
+        <div class="section-title"><div><p class="eyebrow">CATÁLOGO</p><h2>Services &amp; capabilities</h2></div><span class="muted">Fixtures, não integrações</span></div>
+        <div class="service-grid">
+          <article><h3>Websites</h3><p>Listagem, deployment preview e status</p></article>
+          <article><h3>VPS</h3><p>Inventário, estado de energia e snapshots simulados</p></article>
+          <article><h3>Domains / DNS</h3><p>Zonas, registros e verificação de TTL</p></article>
+          <article><h3>Mail</h3><p>Domínios, mailboxes, aliases, quotas e políticas</p></article>
+          <article><h3>Collaboration</h3><p>Calendários, contatos, tarefas, documentos e compartilhamento</p></article>
+          <article><h3>Support</h3><p>Tickets, prioridade, triagem e relógio SLA fictício</p></article>
+          <article><h3>Continuity</h3><p>Backups incrementais/completos e restore preview</p></article>
+          <article><h3>Security</h3><p>RBAC, alertas, auditoria e eventos antimalware</p></article>
+          <article><h3>Billing</h3><p>Assinaturas e cobranças sintéticas</p></article>
+          <article><h3>Ecommerce</h3><p>Catálogo e checkout demonstrativo sem pagamentos</p></article>
+        </div>
+      </section>
+      <aside class="panel policies">
+        <p class="eyebrow">SERVICE-PLAN POLICY</p><h2>Responsibility boundaries</h2>
+        <p class="muted">Pré-visualização estritamente local; nega acesso cruzado e operações não autorizadas.</p>
+        <table>
+          <thead><tr><th>Controle</th><th>Hosted</th><th>Managed</th></tr></thead>
+          <tbody>
+            <tr><td>Health &amp; administrator support</td><td>Read-only</td><td>Read-only</td></tr>
+            <tr><td>End-user helpdesk &amp; changes</td><td>Denied</td><td>Read-only</td></tr>
+            <tr><td>Restore &amp; collaboration</td><td>Read-only</td><td>Read-only</td></tr>
+            <tr><td>Cross-tenant / mail / finance</td><td>Denied</td><td>Denied</td></tr>
+          </tbody>
+        </table>
+        <p class="note">Nenhum compromisso de disponibilidade ou SLA é calculado ou contratado por este software.</p>
+      </aside>
+    </div>
+    <section class="panel interactive" aria-label="Consultas de política">
+      <div class="section-title"><div><p class="eyebrow">NATIVE BRIDGE</p><h2>Read-only service fixtures</h2></div><span id="bridge-state" role="status">Inicializando…</span></div>
+      <div class="actions">
+        <button type="button" data-command="service.report">Service report</button>
+        <button type="button" data-command="service.list">List scenarios</button>
+        <button type="button" data-command="service.simulate.hosted">Hosted helpdesk denial</button>
+        <button type="button" data-command="service.evaluate.hosted">Hosted restore preview</button>
+        <button type="button" data-command="service.evaluate.managed">Managed support preview</button>
+      </div>
+      <div class="terminal-head"><span>Native fixture response</span><span id="response-state">Nenhum resultado</span></div>
+      <pre id="output" tabindex="0" aria-live="polite">Sem comunicação com serviços externos.</pre>
+    </section>
+    <footer>Independent local prototype · Only synthetic identities and fixture data · Windows desktop WebView2</footer>
+  </main>
+</body>
+</html>

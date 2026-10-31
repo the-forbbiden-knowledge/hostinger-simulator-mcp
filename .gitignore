@@ -32,3 +32,6 @@ library/
 private/
 .vscode/
 .idea/
+__pycache__/
+*.pyc
+.pytest_cache/

@@ -13,7 +13,7 @@ All operations are local mock previews. **No cloud accounts, DNS zones, virtual 
 - **Windows x64** development; Visual Studio 2022 C++ workload, CMake 3.24+, optional Ninja; PowerShell 7 recommended.
 - **Native engine:** C++20 with RAII, strict input allowlists, bounded arguments, deterministic responses, thread-safe design principles, and explicit error handling.
 - **Orchestration:** Elixir/Mix and Erlang/OTP; external executable isolated via Erlang Port. Native NIFs are not enabled by default.
-- **UI (planned):** Phoenix + LiveView, not generated or installed in this bootstrap.
+- **Desktop UI (implemented, optional):** `simulator_desktop.exe` is a read-only, maximized Windows WebView2 fixture viewer. Its `ui/` assets and favicon are local; the existing `simulator.exe` CLI and planned Phoenix/LiveView interface remain separate. Building the GUI requires a locally provided WebView2 SDK, and running it requires the WebView2 Runtime.
 - **Protocol (planned):** Model Context Protocol over JSON-RPC 2.0 with tool discovery and validated tool invocations. The current CLI is *not* MCP wire-compatible.
 - **Agent security bootstrap:** 14 synthetic threat-model cases; an executable fail-closed decision engine and guarded native preview call, with source trust, action scope, role, session boundary and explicit approval checks. There is no LLM, browser, database, credential store or network interception in this bootstrap.
 - **Exposure assessment (synthetic):** 20 offline reconnaissance surfaces across model, retrieval, MCP tool discovery, gateway, orchestration and monitoring; role-gated reports with uniform denials and no network probes.
@@ -42,6 +42,18 @@ project/
 The private reference library lives outside this Git repository at `../library/`; it is not committed or published.
 
 ## Quickstart — Windows PowerShell
+
+### Optional Windows desktop (maximized WebView2)
+
+Use a pinned, locally extracted Microsoft.WebView2 NuGet SDK (the directory containing `build/native/include/WebView2.h` and `build/native/x64/WebView2LoaderStatic.lib`). The SDK and the WebView2 Runtime are third-party prerequisites and **are not included in Git**.
+
+```powershell
+cmake --preset windows-msvc -DWEBVIEW2_SDK_DIR="C:\\path\\to\\Microsoft.WebView2"
+cmake --build --preset windows-msvc --config Release --target simulator_desktop simulator
+Start-Process .\\out\\build\\windows-msvc\\Release\\simulator_desktop.exe
+```
+
+The app starts maximized with `ui/favicon.ico` as its Windows icon. The desktop viewer serves bundled assets through a WebView2 virtual local hostname; it never starts a localhost server. Its native bridge implements only enumerated read-only service fixtures, with no actual mail, billing, restore, DNS or remote provider operations. For details see [Windows WebView2 offline boundary](docs/windows_webview_offline.md). On machines without the SDK, CMake skips only the optional desktop target; existing CLI builds and tests remain available.
 
 Open **Developer PowerShell for Visual Studio 2022** in this directory:
 

@@ -195,3 +195,25 @@ add_executable(agent_complete_mediation_tests tests/agent_complete_mediation_tes
 target_link_libraries(agent_complete_mediation_tests PRIVATE simulator_core)
 add_test(NAME native_agent_complete_mediation COMMAND agent_complete_mediation_tests)
 set_tests_properties(native_agent_complete_mediation PROPERTIES TIMEOUT 20)
+
+# Optional read-only Windows desktop viewer. The CLI and all existing tests stay unchanged.
+if(WIN32 AND MSVC)
+  set(WEBVIEW2_SDK_DIR "" CACHE PATH "Directory containing build/native/include/WebView2.h")
+  if(NOT WEBVIEW2_SDK_DIR AND DEFINED ENV{WEBVIEW2_SDK_DIR})
+    set(WEBVIEW2_SDK_DIR "$ENV{WEBVIEW2_SDK_DIR}")
+  endif()
+  set(_webview2_header "${WEBVIEW2_SDK_DIR}/build/native/include/WebView2.h")
+  set(_webview2_library "${WEBVIEW2_SDK_DIR}/build/native/x64/WebView2LoaderStatic.lib")
+  if(EXISTS "${_webview2_header}" AND EXISTS "${_webview2_library}")
+    add_executable(simulator_desktop WIN32 src/native/desktop_main.cpp src/native/desktop_app.rc)
+    target_include_directories(simulator_desktop PRIVATE "${WEBVIEW2_SDK_DIR}/build/native/include")
+    target_link_libraries(simulator_desktop PRIVATE simulator_core "${_webview2_library}" ole32 user32)
+    target_compile_definitions(simulator_desktop PRIVATE UNICODE _UNICODE)
+    add_custom_command(TARGET simulator_desktop POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${CMAKE_CURRENT_SOURCE_DIR}/ui" "$<TARGET_FILE_DIR:simulator_desktop>/ui")
+    message(STATUS "Offline WebView2 desktop viewer enabled")
+  else()
+    message(STATUS "Offline WebView2 desktop viewer skipped: supply -DWEBVIEW2_SDK_DIR with pinned local SDK")
+  endif()
+endif()
