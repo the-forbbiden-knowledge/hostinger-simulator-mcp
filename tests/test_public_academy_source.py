@@ -17,28 +17,34 @@ class PublicAcademyTests(unittest.TestCase):
         self.assertIn('class="light-theme"', html)
         self.assertIn('name="color-scheme" content="light"', html)
 
-    def test_original_triangle_and_animation_survive(self):
+    def test_original_triangle_has_only_continuous_sweep(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
         css = (ROOT / "academy.css").read_text(encoding="utf-8")
         self.assertEqual(html.count("<path "), 16)
         self.assertIn('d="M485 650.4h230L600 451.21z"', html)
-        for selector in (
-            "brand-fade-scan", "academy-hero-coriolis-flash",
-            "academy-hero-coriolis-precession", ".hero-brand-mark",
-            "animation:", "mask-position:", "steps(1, end)"
-        ):
+        for selector in ("brand-fade-scan", ".hero-brand-mark", "animation:", "mask-position:"):
             with self.subTest(selector=selector):
                 self.assertIn(selector, css)
+        for removed in ("academy-hero-coriolis-flash", "academy-hero-coriolis-precession",
+                        "steps(1, end)", "drop-shadow("):
+            with self.subTest(removed=removed):
+                self.assertNotIn(removed, css)
         self.assertIn('data-triangle-effect="on"', html)
-        self.assertIn('data-triangle-flashes="on"', html)
+        self.assertIn('data-triangle-flashes="off"', html)
 
-    def test_central_copy_and_course_are_preserved(self):
+    def test_central_copy_without_courses_and_original_site_title(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
+        css = (ROOT / "academy.css").read_text(encoding="utf-8")
         self.assertIn("<h1 id=\"academy-title\">A Elite Estrangeira</h1>", html)
         self.assertIn("Nós sabemos o que somos, onde podemos chegar e o que podemos realizar.", html)
         self.assertIn("Trazendo a verdadeira luz do conhecimento àqueles capazes de questionar o suficiente para buscá-la.", html)
-        self.assertIn("<h2 id=\"courses-title\">Cursos</h2>", html)
-        self.assertIn("Como importar e exportar cookies com o Cookie Editor", html)
+        self.assertIn("<title>Hostinger Simulator - Windows Native Core + Elixir/OTP | hostinger-simulator-mcp</title>", html)
+        self.assertNotIn("Cookie Editor", html)
+        self.assertNotIn("courses-title", html)
+        self.assertNotIn("academy-courses", html)
+        self.assertNotIn("course-card", html)
+        self.assertNotIn(".academy-courses", css)
+        self.assertNotIn(".course-card", css)
 
     def test_original_icon_reused_without_new_private_assets(self):
         html = (ROOT / "index.html").read_text(encoding="utf-8")
