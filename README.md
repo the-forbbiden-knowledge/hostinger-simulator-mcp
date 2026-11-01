@@ -57,7 +57,7 @@ The app starts maximized with `ui/favicon.ico` as its Windows icon. The desktop 
 
 ## Windows release and automatic updates
 
-`VERSION.txt` is the release version source. The Windows release workflow runs when that file changes on `main` (or by manual dispatch). It downloads the pinned WebView2 SDK and verifies its SHA-256, builds both native executables, runs CTest and updater transaction tests, packages the desktop UI and updater, then publishes a GitHub prerelease with the package and SHA256SUMS manifest. The initial candidate version is `0.1.0`.
+`VERSION.txt` is the release version source. The Windows release workflow runs when that file changes on `main` (or by manual dispatch). It downloads the pinned WebView2 SDK and verifies its SHA-256, builds both native executables, runs CTest and updater transaction tests, stages the complete desktop layout, builds an Inno Setup installer EXE and a portable ZIP, calculates SHA-256 for both, and publishes both assets with the checksum manifest in a GitHub prerelease. The recommended download is `HostingerSimulator-Setup-x64.exe`; use the ZIP for manual portable extraction and in-app updates. Current preview version: `0.1.2`.
 
 In the desktop application, choose **Verificar atualizações**. The helper checks the published releases for this repository, compares the semantic version, downloads the Windows x64 package and verifies its SHA-256 against the digest returned by the GitHub Releases API. Installation requires explicit confirmation, closes the desktop normally, keeps a backup under `%LOCALAPPDATA%\HostingerSimulator\rollback`, and restores the previous files if replacement or first startup fails. It does not silently install updates.
 

@@ -1,4 +1,4 @@
-"""Static contracts for the GitHub Releases updater and portable release workflow."""
+"""Static contracts for the GitHub Releases updater and Windows installer workflow."""
 from pathlib import Path
 import re
 import unittest
@@ -17,7 +17,7 @@ class UpdateContractTests(unittest.TestCase):
         self.assertIn('group: windows-release-${{ github.ref }}', workflow)
         self.assertIn('GITHUB_TOKEN: ${{ github.token }}', workflow)
         self.assertNotRegex(workflow, r'\$\{\s+github\.')
-        self.assertIn('RELEASE_PUBLISHED=$($verify.html_url)', workflow)
+        self.assertIn('RELEASE_PUBLISHED=$($release.html_url)', workflow)
 
     def test_updater_has_utf8_bom_for_windows_powershell_51(self):
         updater_bytes = (ROOT / "tools/update.ps1").read_bytes()
@@ -62,7 +62,7 @@ class UpdateContractTests(unittest.TestCase):
         self.assertNotIn("fetch(", js)
         self.assertNotIn("XMLHttpRequest", js)
 
-    def test_release_workflow_builds_desktop_and_verifies_sdk_and_asset_digest(self):
+    def test_release_workflow_builds_desktop_and_verifies_zip_and_installer_digests(self):
         workflow = (ROOT / ".github/workflows/release-windows.yml").read_text(encoding="utf-8")
         for token in (
             "1.0.4314.35",
@@ -70,12 +70,32 @@ class UpdateContractTests(unittest.TestCase):
             "cmake --build --preset windows-msvc --config Release",
             "ctest --preset windows-msvc",
             "hostinger-simulator-windows-x64.zip",
-            "PACKAGE_SHA256",
+            "HostingerSimulator-Setup-x64.exe",
+            "packaging\\windows\\installer.iss",
+            "INSTALLER_SHA256",
+            "installerAsset.digest",
             "zipAsset.digest",
             "prerelease = $true",
         ):
             with self.subTest(token=token):
                 self.assertIn(token, workflow)
+
+    def test_installer_installs_the_complete_desktop_layout_without_admin(self):
+        installer = (ROOT / "packaging/windows/installer.iss").read_text(encoding="utf-8")
+        for token in (
+            "PrivilegesRequired=lowest",
+            "ArchitecturesAllowed=x64",
+            "simulator_desktop.exe",
+            "simulator.exe",
+            "VERSION.txt",
+            "ui\\*",
+            "tools\\*",
+            "{autoprograms}",
+            "{autodesktop}",
+            "HostingerSimulator-Setup-x64",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token, installer)
 
     def test_cmake_copies_updater_and_version_beside_desktop_binary(self):
         cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")

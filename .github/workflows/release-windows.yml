@@ -71,13 +71,14 @@ jobs:
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test_update.ps1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-      - name: Assemble portable Windows x64 package and SHA-256 manifest
+      - name: Assemble portable package, setup EXE and SHA-256 manifest
         shell: pwsh
         run: |
           $version = $env:SIMULATOR_RELEASE_VERSION
           $build = Join-Path $env:GITHUB_WORKSPACE 'out\build\windows-msvc\Release'
           $stage = Join-Path $env:RUNNER_TEMP 'hostinger-simulator-release'
           $package = Join-Path $env:RUNNER_TEMP 'hostinger-simulator-windows-x64.zip'
+          $installer = Join-Path $env:RUNNER_TEMP 'HostingerSimulator-Setup-x64.exe'
           New-Item -ItemType Directory -Path $stage -Force | Out-Null
           foreach ($required in @(
             'simulator_desktop.exe', 'simulator.exe', 'VERSION.txt',
@@ -97,10 +98,28 @@ jobs:
           if ($packagedVersion -ne $version) { throw "Package version $packagedVersion differs from VERSION.txt $version." }
           Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $package -CompressionLevel Optimal
           $sha = (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$sha  hostinger-simulator-windows-x64.zip" | Set-Content -Path (Join-Path $env:RUNNER_TEMP 'SHA256SUMS.txt') -Encoding ascii
+
+          $iscc = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path -LiteralPath $iscc -PathType Leaf)) {
+            throw "Inno Setup compiler not found on windows-2022 runner: $iscc"
+          }
+          & $iscc "/DAppVersion=$version" "/DSourceDir=$stage" "/DOutputDir=$env:RUNNER_TEMP" (Join-Path $env:GITHUB_WORKSPACE 'packaging\windows\installer.iss')
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE." }
+          if (-not (Test-Path -LiteralPath $installer -PathType Leaf)) {
+            throw "Expected installer output was not created: $installer"
+          }
+          $installerSha = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+
+          @(
+            "$sha  hostinger-simulator-windows-x64.zip"
+            "$installerSha  HostingerSimulator-Setup-x64.exe"
+          ) | Set-Content -Path (Join-Path $env:RUNNER_TEMP 'SHA256SUMS.txt') -Encoding ascii
           "PACKAGE_PATH=$package" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "PACKAGE_SHA256=$sha" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "INSTALLER_PATH=$installer" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "INSTALLER_SHA256=$installerSha" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Write-Output "PACKAGE_SHA256=$sha"
+          Write-Output "INSTALLER_SHA256=$installerSha"
           Get-ChildItem $stage -Recurse -File | Select-Object FullName,Length
 
       - name: Create draft GitHub Release and upload assets
@@ -132,10 +151,10 @@ jobs:
             body = @"
           Preview release for the Windows x64 native desktop package.
 
-          - Native C++ CLI and WebView2 desktop viewer.
-          - Explicit updater checks this repository's GitHub Releases only.
-          - The package digest is verified before installation; user confirmation is required.
-          - The previous installation is backed up for rollback.
+          - Recommended download: HostingerSimulator-Setup-x64.exe — Windows x64 installer for the desktop app; installs the GUI, CLI, local UI assets and updater, and creates Start Menu shortcuts.
+          - Portable download: hostinger-simulator-windows-x64.zip — complete portable folder; retained for manual extraction and the in-app updater.
+          - SHA256SUMS.txt contains SHA-256 checksums for both downloads.
+          - The in-app updater checks this repository's GitHub Releases, verifies the ZIP digest, requests confirmation and keeps a rollback copy.
           - WebView2 Runtime is a Windows prerequisite and is not bundled.
           - Service/provider actions remain synthetic; this is not an official Hostinger integration or production release.
           "@
@@ -146,6 +165,7 @@ jobs:
           $release = Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$repo/releases" -Headers $headers -ContentType 'application/json' -Body $body -TimeoutSec 30
           $uploadBase = $release.upload_url -replace '\{\?name,label\}$',''
           $assets = @(
+            @{ Path = $env:INSTALLER_PATH; Name = 'HostingerSimulator-Setup-x64.exe'; Type = 'application/octet-stream' },
             @{ Path = $env:PACKAGE_PATH; Name = 'hostinger-simulator-windows-x64.zip'; Type = 'application/zip' },
             @{ Path = (Join-Path $env:RUNNER_TEMP 'SHA256SUMS.txt'); Name = 'SHA256SUMS.txt'; Type = 'text/plain' }
           )
@@ -155,9 +175,13 @@ jobs:
           }
           $publishedDraft = Invoke-RestMethod -Method Get -Uri $release.url -Headers $headers -TimeoutSec 30
           $zipAsset = @($publishedDraft.assets | Where-Object { $_.name -eq 'hostinger-simulator-windows-x64.zip' })[0]
+          $installerAsset = @($publishedDraft.assets | Where-Object { $_.name -eq 'HostingerSimulator-Setup-x64.exe' })[0]
           if (-not $zipAsset -or $zipAsset.digest -ne "sha256:$env:PACKAGE_SHA256") {
-            throw 'GitHub release asset digest does not match the local package digest.'
+            throw 'GitHub release ZIP digest does not match the local package digest.'
+          }
+          if (-not $installerAsset -or $installerAsset.digest -ne "sha256:$env:INSTALLER_SHA256") {
+            throw 'GitHub release installer digest does not match the local installer digest.'
           }
           $publishBody = @{ draft = $false; prerelease = $true; make_latest = 'false' } | ConvertTo-Json
           Invoke-RestMethod -Method Patch -Uri $release.url -Headers $headers -ContentType 'application/json' -Body $publishBody -TimeoutSec 30 | Out-Null
-          Write-Output "RELEASE_PUBLISHED=$($verify.html_url)"
+          Write-Output "RELEASE_PUBLISHED=$($release.html_url)"
