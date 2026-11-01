@@ -160,4 +160,4 @@ jobs:
           }
           $publishBody = @{ draft = $false; prerelease = $true; make_latest = 'false' } | ConvertTo-Json
           Invoke-RestMethod -Method Patch -Uri $release.url -Headers $headers -ContentType 'application/json' -Body $publishBody -TimeoutSec 30 | Out-Null
-          Write-Output "RELEASE_PUBLISHED=$($release.html_url)"
+          Write-Output "RELEASE_PUBLISHED=$($verify.html_url)"
