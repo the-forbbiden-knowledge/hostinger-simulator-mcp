@@ -6,14 +6,14 @@
 
 Build a deterministic, secure, testable infrastructure and collaboration simulator for Windows 10/11 and Windows Server (Windows 2022 C++ CI verified for prior versions; check current commit in Actions), with a C++ native engine compiled by CMake, an Elixir/OTP orchestration layer, and a future Phoenix/LiveView interface and MCP JSON-RPC adapter.
 
-All operations are local mock previews. **No cloud accounts, DNS zones, virtual machines, mailboxes, or billing records are modified.** Real-provider integration is out of scope until explicitly authorized, designed, and separately tested.
+All service and provider operations are local mock previews. **No cloud accounts, DNS zones, virtual machines, mailboxes, or billing records are modified.** The only network exception is the explicit desktop updater, which contacts this repository's GitHub Releases API and its matching release asset; it does not call Hostinger or any provider API. Real-provider integration remains out of scope until separately authorized, designed, and tested.
 
 ## Technology baseline
 
 - **Windows x64** development; Visual Studio 2022 C++ workload, CMake 3.24+, optional Ninja; PowerShell 7 recommended.
 - **Native engine:** C++20 with RAII, strict input allowlists, bounded arguments, deterministic responses, thread-safe design principles, and explicit error handling.
 - **Orchestration:** Elixir/Mix and Erlang/OTP; external executable isolated via Erlang Port. Native NIFs are not enabled by default.
-- **Desktop UI (implemented, optional):** `simulator_desktop.exe` is a read-only, maximized Windows WebView2 fixture viewer. Its `ui/` assets and favicon are local; the existing `simulator.exe` CLI and planned Phoenix/LiveView interface remain separate. Building the GUI requires a locally provided WebView2 SDK, and running it requires the WebView2 Runtime.
+- **Desktop UI (implemented, optional):** `simulator_desktop.exe` is a maximized Windows WebView2 fixture viewer. Its browser content, UI assets and favicon remain local; the existing `simulator.exe` CLI and planned Phoenix/LiveView interface remain separate. An explicit update command launches a separate PowerShell helper that checks only GitHub Releases, verifies the GitHub-provided SHA-256 asset digest, asks before installation, backs up the previous files and rolls back if replacement or startup fails. Building the GUI requires the pinned WebView2 SDK; running it requires the WebView2 Runtime.
 - **Protocol (planned):** Model Context Protocol over JSON-RPC 2.0 with tool discovery and validated tool invocations. The current CLI is *not* MCP wire-compatible.
 - **Agent security bootstrap:** 14 synthetic threat-model cases; an executable fail-closed decision engine and guarded native preview call, with source trust, action scope, role, session boundary and explicit approval checks. There is no LLM, browser, database, credential store or network interception in this bootstrap.
 - **Exposure assessment (synthetic):** 20 offline reconnaissance surfaces across model, retrieval, MCP tool discovery, gateway, orchestration and monitoring; role-gated reports with uniform denials and no network probes.
@@ -53,7 +53,15 @@ cmake --build --preset windows-msvc --config Release --target simulator_desktop 
 Start-Process .\\out\\build\\windows-msvc\\Release\\simulator_desktop.exe
 ```
 
-The app starts maximized with `ui/favicon.ico` as its Windows icon. The desktop viewer serves bundled assets through a WebView2 virtual local hostname; it never starts a localhost server. Its native bridge implements only enumerated read-only service fixtures, with no actual mail, billing, restore, DNS or remote provider operations. For details see [Windows WebView2 offline boundary](docs/windows_webview_offline.md). On machines without the SDK, CMake skips only the optional desktop target; existing CLI builds and tests remain available.
+The app starts maximized with `ui/favicon.ico` as its Windows icon. The desktop viewer serves bundled assets through a WebView2 virtual local hostname; it never starts a localhost server. Service fixtures remain read-only and synthetic. The explicit update button launches the fixed `tools/update.ps1` helper; only that separate process can contact the project's GitHub Releases API and download the matching release package. For details see [Windows WebView2 and updater boundary](docs/windows_webview_offline.md). On machines without the SDK, CMake skips only the optional desktop target; existing CLI builds and tests remain available.
+
+## Windows release and automatic updates
+
+`VERSION.txt` is the release version source. The Windows release workflow runs when that file changes on `main` (or by manual dispatch). It downloads the pinned WebView2 SDK and verifies its SHA-256, builds both native executables, runs CTest and updater transaction tests, packages the desktop UI and updater, then publishes a GitHub prerelease with the package and SHA256SUMS manifest. The initial candidate version is `0.1.0`.
+
+In the desktop application, choose **Verificar atualizações**. The helper checks the published releases for this repository, compares the semantic version, downloads the Windows x64 package and verifies its SHA-256 against the digest returned by the GitHub Releases API. Installation requires explicit confirmation, closes the desktop normally, keeps a backup under `%LOCALAPPDATA%\HostingerSimulator\rollback`, and restores the previous files if replacement or first startup fails. It does not silently install updates.
+
+**Trust limitation:** the GitHub-provided SHA-256 detects package corruption or mismatch; it is not an Authenticode publisher signature. Authenticode signing and independent build attestation remain pending and must not be inferred from the checksum.
 
 Open **Developer PowerShell for Visual Studio 2022** in this directory:
 

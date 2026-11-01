@@ -1,6 +1,7 @@
-// Offline-only Windows WebView2 viewer. No provider, mail, network, or MCP transport.
+// Local-only WebView2 viewer. The only outbound network exception is the explicit GitHub Releases updater.
 #include "simulator/service_policy.hpp"
 #include <windows.h>
+#include <shellapi.h>
 #include <WebView2.h>
 #include <wrl.h>
 #include <string>
@@ -30,13 +31,38 @@ std::wstring utf8_to_wide(const std::string& text) {
   return result;
 }
 
-std::wstring local_assets() {
+std::wstring application_directory() {
   wchar_t path[MAX_PATH]{};
   if (!GetModuleFileNameW(nullptr, path, MAX_PATH)) return {};
   std::wstring directory(path);
   const auto position = directory.find_last_of(L"\\/");
   if (position == std::wstring::npos) return {};
-  return directory.substr(0, position) + L"\\ui";
+  return directory.substr(0, position);
+}
+
+std::wstring local_assets() {
+  const auto directory = application_directory();
+  return directory.empty() ? std::wstring{} : directory + L"\\ui";
+}
+
+bool launch_update_helper() {
+  const auto directory = application_directory();
+  if (directory.empty()) return false;
+  const auto script = directory + L"\\tools\\update.ps1";
+  if (GetFileAttributesW(script.c_str()) == INVALID_FILE_ATTRIBUTES) return false;
+
+  wchar_t system_directory[MAX_PATH]{};
+  if (!GetSystemDirectoryW(system_directory, MAX_PATH)) return false;
+  const std::wstring powershell =
+      std::wstring(system_directory) + L"\\WindowsPowerShell\\v1.0\\powershell.exe";
+  if (GetFileAttributesW(powershell.c_str()) == INVALID_FILE_ATTRIBUTES) return false;
+  const auto arguments =
+      L"-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File \"" +
+      script + L"\" -InstallDirectory \"" + directory +
+      L"\" -ParentProcessId " + std::to_wstring(GetCurrentProcessId());
+  const auto result = ShellExecuteW(nullptr, L"open", powershell.c_str(),
+                                    arguments.c_str(), directory.c_str(), SW_HIDE);
+  return reinterpret_cast<INT_PTR>(result) > 32;
 }
 
 bool is_local(const std::wstring& url) {
@@ -52,7 +78,7 @@ void resize_browser() {
 
 void send_fixture(const std::wstring& command) {
   if (!browser) return;
-  // The only native bridge messages are fixed, read-only service operations.
+  // Service fixtures are read-only. The sole state-changing command opens the fixed, local GitHub release updater.
   std::string json;
   if (command == L"service.list") {
     json = simulator::service_policy::list();
@@ -66,6 +92,10 @@ void send_fixture(const std::wstring& command) {
   } else if (command == L"service.evaluate.managed") {
     json = simulator::service_policy::evaluate(
         "reviewer", "managed", "same_tenant", "end_user_support_preview", "approved_read_only");
+  } else if (command == L"app.update") {
+    json = launch_update_helper()
+        ? R"({"ok":true,"action":"update_started","network_scope":"github_releases_only"})"
+        : R"({"ok":false,"action":"update_not_started","error":"update_helper_missing_or_unavailable"})";
   } else {
     json = "{\"ok\":false,\"decision\":\"deny\",\"error\":\"unsupported_read_only_fixture\"}";
   }

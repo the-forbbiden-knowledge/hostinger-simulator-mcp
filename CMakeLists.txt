@@ -207,11 +207,16 @@ if(WIN32 AND MSVC)
   if(EXISTS "${_webview2_header}" AND EXISTS "${_webview2_library}")
     add_executable(simulator_desktop WIN32 src/native/desktop_main.cpp src/native/desktop_app.rc)
     target_include_directories(simulator_desktop PRIVATE "${WEBVIEW2_SDK_DIR}/build/native/include")
-    target_link_libraries(simulator_desktop PRIVATE simulator_core "${_webview2_library}" ole32 user32)
+    target_link_libraries(simulator_desktop PRIVATE simulator_core "${_webview2_library}" ole32 user32 shell32)
     target_compile_definitions(simulator_desktop PRIVATE UNICODE _UNICODE)
     add_custom_command(TARGET simulator_desktop POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy_directory
-      "${CMAKE_CURRENT_SOURCE_DIR}/ui" "$<TARGET_FILE_DIR:simulator_desktop>/ui")
+      "${CMAKE_CURRENT_SOURCE_DIR}/ui" "$<TARGET_FILE_DIR:simulator_desktop>/ui"
+      COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:simulator_desktop>/tools"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${CMAKE_CURRENT_SOURCE_DIR}/tools/update.ps1" "$<TARGET_FILE_DIR:simulator_desktop>/tools/update.ps1"
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "${CMAKE_CURRENT_SOURCE_DIR}/VERSION.txt" "$<TARGET_FILE_DIR:simulator_desktop>/VERSION.txt")
     message(STATUS "Offline WebView2 desktop viewer enabled")
   else()
     message(STATUS "Offline WebView2 desktop viewer skipped: supply -DWEBVIEW2_SDK_DIR with pinned local SDK")

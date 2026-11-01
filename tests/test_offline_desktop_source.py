@@ -41,8 +41,12 @@ class OfflineDesktopSourceTests(unittest.TestCase):
         ):
             with self.subTest(required=required):
                 self.assertIn(required, src)
-        self.assertNotIn("ShellExecute", src)
+        self.assertIn('command == L"app.update"', src)
+        self.assertIn("tools", src)
+        self.assertIn("update.ps1", src)
+        self.assertIn("ShellExecuteW", src)
         self.assertNotIn("CreateProcess", src)
+        self.assertIn("powershell.exe", src)
 
     def test_webview_is_separate_from_cli(self):
         cmake = (ROOT / "CMakeLists.txt").read_text(encoding="utf-8")

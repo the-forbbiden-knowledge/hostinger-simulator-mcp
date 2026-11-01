@@ -74,7 +74,9 @@
         <button type="button" data-command="service.simulate.hosted">Hosted helpdesk denial</button>
         <button type="button" data-command="service.evaluate.hosted">Hosted restore preview</button>
         <button type="button" data-command="service.evaluate.managed">Managed support preview</button>
+        <button type="button" data-command="app.update">Verificar atualizações</button>
       </div>
+      <p class="note">O atualizador consulta somente os GitHub Releases do projeto. O download é verificado por SHA-256 e a instalação exige confirmação; a versão anterior é preservada para rollback.</p>
       <div class="terminal-head"><span>Native fixture response</span><span id="response-state">Nenhum resultado</span></div>
       <pre id="output" tabindex="0" aria-live="polite">Sem comunicação com serviços externos.</pre>
     </section>

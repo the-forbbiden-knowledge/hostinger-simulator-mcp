@@ -5,7 +5,7 @@ const state = document.getElementById("bridge-state");
 const response = document.getElementById("response-state");
 const allowed = new Set([
   "service.list", "service.report", "service.simulate.hosted",
-  "service.evaluate.hosted", "service.evaluate.managed"
+  "service.evaluate.hosted", "service.evaluate.managed", "app.update"
 ]);
 const connected = Boolean(window.chrome && window.chrome.webview &&
                           typeof window.chrome.webview.postMessage === "function");
@@ -27,8 +27,13 @@ if (connected) {
       return;
     }
     try {
-      output.textContent = JSON.stringify(JSON.parse(data), null, 2);
-      response.textContent = "Resposta sintética local";
+      const parsed = JSON.parse(data);
+      output.textContent = JSON.stringify(parsed, null, 2);
+      response.textContent = parsed.action === "update_started"
+        ? "Verificador de atualizações aberto"
+        : parsed.action === "update_not_started"
+          ? "Atualizador indisponível"
+          : "Resposta sintética local";
     } catch (_) {
       output.textContent = "A resposta não é um JSON válido.";
       response.textContent = "Falha no formato";

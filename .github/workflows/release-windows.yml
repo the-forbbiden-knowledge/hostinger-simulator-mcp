@@ -1,0 +1,163 @@
+name: Windows release and updater package
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "VERSION.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Validate release version
+        shell: pwsh
+        run: |
+          $version = (Get-Content VERSION.txt -Raw).Trim()
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "VERSION.txt must be MAJOR.MINOR.PATCH; found '$version'."
+          }
+          $tag = "v$version"
+          "SIMULATOR_RELEASE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "SIMULATOR_RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Download and verify pinned Microsoft WebView2 SDK
+        shell: pwsh
+        run: |
+          $version = '1.0.4314.35'
+          $expected = '90778deb1b77e36292828b4b5833c9255c27533f40e0ddd55891ae718944edc4'
+          $package = Join-Path $env:RUNNER_TEMP "microsoft.web.webview2.$version.nupkg"
+          $sdk = Join-Path $env:GITHUB_WORKSPACE '.tools\webview2'
+          $uri = "https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/$version/microsoft.web.webview2.$version.nupkg"
+          Invoke-WebRequest -Uri $uri -OutFile $package -TimeoutSec 120
+          $actual = (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "WebView2 SDK digest mismatch: $actual" }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          New-Item -ItemType Directory -Path (Split-Path -Parent $sdk) -Force | Out-Null
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($package, $sdk)
+          if (-not (Test-Path (Join-Path $sdk 'build\native\include\WebView2.h')) -or
+              -not (Test-Path (Join-Path $sdk 'build\native\x64\WebView2LoaderStatic.lib'))) {
+            throw 'Pinned WebView2 SDK package is missing required native files.'
+          }
+
+      - name: Configure native CLI and WebView2 desktop
+        shell: pwsh
+        run: cmake --preset windows-msvc -DWEBVIEW2_SDK_DIR="$env:GITHUB_WORKSPACE\.tools\webview2"
+
+      - name: Build all native targets for the complete CTest suite
+        shell: pwsh
+        run: cmake --build --preset windows-msvc --config Release
+
+      - name: Run native CTest suite
+        shell: pwsh
+        run: ctest --preset windows-msvc -C Release --output-on-failure
+
+      - name: Verify updater contract and transactional tests
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tests -p "test_update_contract.py" -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test_update.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Assemble portable Windows x64 package and SHA-256 manifest
+        shell: pwsh
+        run: |
+          $version = $env:SIMULATOR_RELEASE_VERSION
+          $build = Join-Path $env:GITHUB_WORKSPACE 'out\build\windows-msvc\Release'
+          $stage = Join-Path $env:RUNNER_TEMP 'hostinger-simulator-release'
+          $package = Join-Path $env:RUNNER_TEMP 'hostinger-simulator-windows-x64.zip'
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+          foreach ($required in @(
+            'simulator_desktop.exe', 'simulator.exe', 'VERSION.txt',
+            'ui\index.html', 'ui\app.js', 'ui\styles.css', 'ui\favicon.ico',
+            'tools\update.ps1'
+          )) {
+            if (-not (Test-Path -LiteralPath (Join-Path $build $required) -PathType Leaf)) {
+              throw "Release package input missing: $required"
+            }
+          }
+          Copy-Item -LiteralPath (Join-Path $build 'simulator_desktop.exe') -Destination $stage
+          Copy-Item -LiteralPath (Join-Path $build 'simulator.exe') -Destination $stage
+          Copy-Item -LiteralPath (Join-Path $build 'VERSION.txt') -Destination $stage
+          Copy-Item -LiteralPath (Join-Path $build 'ui') -Destination (Join-Path $stage 'ui') -Recurse
+          Copy-Item -LiteralPath (Join-Path $build 'tools') -Destination (Join-Path $stage 'tools') -Recurse
+          $packagedVersion = (Get-Content (Join-Path $stage 'VERSION.txt') -Raw).Trim()
+          if ($packagedVersion -ne $version) { throw "Package version $packagedVersion differs from VERSION.txt $version." }
+          Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $package -CompressionLevel Optimal
+          $sha = (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$sha  hostinger-simulator-windows-x64.zip" | Set-Content -Path (Join-Path $env:RUNNER_TEMP 'SHA256SUMS.txt') -Encoding ascii
+          "PACKAGE_PATH=$package" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "PACKAGE_SHA256=$sha" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Output "PACKAGE_SHA256=$sha"
+          Get-ChildItem $stage -Recurse -File | Select-Object FullName,Length
+
+      - name: Create draft GitHub Release and upload assets
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          $headers = @{
+            Authorization = "Bearer $env:GITHUB_TOKEN"
+            Accept = 'application/vnd.github+json'
+            'X-GitHub-Api-Version' = '2022-11-28'
+            'User-Agent' = 'HostingerSimulatorReleaseWorkflow'
+          }
+          $repo = $env:GITHUB_REPOSITORY
+          $releaseUrl = "https://api.github.com/repos/$repo/releases/tags/$env:SIMULATOR_RELEASE_TAG"
+          try {
+            $existing = Invoke-RestMethod -Method Get -Uri $releaseUrl -Headers $headers -TimeoutSec 20
+            if (-not $existing.draft) { throw "Published release $env:SIMULATOR_RELEASE_TAG already exists; refusing to overwrite." }
+            Invoke-RestMethod -Method Delete -Uri $existing.url -Headers $headers -TimeoutSec 20 | Out-Null
+            Write-Output "Removed incomplete draft release $($existing.id) before retry."
+          } catch {
+            if ($_.Exception.Response.StatusCode.value__ -ne 404 -and $_.Exception.Message -notmatch 'refusing to overwrite') { throw }
+            if ($_.Exception.Message -match 'refusing to overwrite') { throw }
+          }
+          $body = @{
+            tag_name = $env:SIMULATOR_RELEASE_TAG
+            target_commitish = $env:GITHUB_SHA
+            name = "Hostinger Simulator $($env:SIMULATOR_RELEASE_TAG) — Preview"
+            body = @"
+          Preview release for the Windows x64 native desktop package.
+
+          - Native C++ CLI and WebView2 desktop viewer.
+          - Explicit updater checks this repository's GitHub Releases only.
+          - The package digest is verified before installation; user confirmation is required.
+          - The previous installation is backed up for rollback.
+          - WebView2 Runtime is a Windows prerequisite and is not bundled.
+          - Service/provider actions remain synthetic; this is not an official Hostinger integration or production release.
+          "@
+            draft = $true
+            prerelease = $true
+            make_latest = 'false'
+          } | ConvertTo-Json -Depth 5
+          $release = Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$repo/releases" -Headers $headers -ContentType 'application/json' -Body $body -TimeoutSec 30
+          $uploadBase = $release.upload_url -replace '\{\?name,label\}$',''
+          $assets = @(
+            @{ Path = $env:PACKAGE_PATH; Name = 'hostinger-simulator-windows-x64.zip'; Type = 'application/zip' },
+            @{ Path = (Join-Path $env:RUNNER_TEMP 'SHA256SUMS.txt'); Name = 'SHA256SUMS.txt'; Type = 'text/plain' }
+          )
+          foreach ($asset in $assets) {
+            $uri = $uploadBase + '?name=' + [uri]::EscapeDataString($asset.Name)
+            Invoke-WebRequest -Method Post -Uri $uri -Headers $headers -ContentType $asset.Type -InFile $asset.Path -TimeoutSec 300 | Out-Null
+          }
+          $publishedDraft = Invoke-RestMethod -Method Get -Uri $release.url -Headers $headers -TimeoutSec 30
+          $zipAsset = @($publishedDraft.assets | Where-Object { $_.name -eq 'hostinger-simulator-windows-x64.zip' })[0]
+          if (-not $zipAsset -or $zipAsset.digest -ne "sha256:$env:PACKAGE_SHA256") {
+            throw 'GitHub release asset digest does not match the local package digest.'
+          }
+          $publishBody = @{ draft = $false; prerelease = $true; make_latest = 'false' } | ConvertTo-Json
+          Invoke-RestMethod -Method Patch -Uri $release.url -Headers $headers -ContentType 'application/json' -Body $publishBody -TimeoutSec 30 | Out-Null
+          Write-Output "RELEASE_PUBLISHED=$($release.html_url)"

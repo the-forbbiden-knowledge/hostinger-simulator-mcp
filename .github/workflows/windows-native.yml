@@ -33,8 +33,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -m unittest discover -s tests -p "test_public_navigation_source.py" -v
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Verify local-only WebView2 source boundaries and supplied icon
-        run: python -m unittest discover -s tests -p "test_offline_desktop_source.py" -v
+      - name: Verify local WebView2 boundary and GitHub-only updater
+        run: |
+          python -m unittest discover -s tests -p "test_offline_desktop_source.py" -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s tests -p "test_update_contract.py" -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\test_update.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Configure
         run: cmake --preset windows-msvc
       - name: Build
