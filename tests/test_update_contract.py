@@ -17,9 +17,14 @@ class UpdateContractTests(unittest.TestCase):
         self.assertIn('group: windows-release-${{ github.ref }}', workflow)
         self.assertIn('GITHUB_TOKEN: ${{ github.token }}', workflow)
         self.assertNotRegex(workflow, r'\$\{\s+github\.')
+        self.assertIn('RELEASE_PUBLISHED=$($verify.html_url)', workflow)
+
+    def test_updater_has_utf8_bom_for_windows_powershell_51(self):
+        updater_bytes = (ROOT / "tools/update.ps1").read_bytes()
+        self.assertTrue(updater_bytes.startswith(b"\xef\xbb\xbf"))
 
     def test_updater_uses_fixed_github_release_origin_and_digest(self):
-        updater = (ROOT / "tools/update.ps1").read_text(encoding="utf-8")
+        updater = (ROOT / "tools/update.ps1").read_text(encoding="utf-8-sig")
         self.assertIn("https://api.github.com/repos/", updater)
         self.assertIn("hostinger-simulator-mcp/releases?per_page=20", updater)
         self.assertIn("https://github.com/", updater)
@@ -33,7 +38,7 @@ class UpdateContractTests(unittest.TestCase):
         self.assertNotIn("Start-Process powershell", updater)
 
     def test_archive_validation_and_transactional_rollback_exist(self):
-        updater = (ROOT / "tools/update.ps1").read_text(encoding="utf-8")
+        updater = (ROOT / "tools/update.ps1").read_text(encoding="utf-8-sig")
         for token in (
             "Assert-SafeArchive", "HashSet[string]", "Caminho inseguro",
             "tools/update.ps1", "Install-PackageTransaction",
